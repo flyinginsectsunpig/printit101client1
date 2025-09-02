@@ -8,7 +8,7 @@ function App() {
         <Router>
             <Routes>
                 <Route path="/test-api" element={<TestApi />} />
-                {/*<Route path="/customer-test-api" element={<CustomerTestApi />} />*/}
+                <Route path="/customer-test-api" element={<CustomerTestApi />} />
                 {/* <-- new route */}
             </Routes>
         </Router>
