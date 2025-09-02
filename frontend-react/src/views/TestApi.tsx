@@ -1,194 +1,178 @@
-import React from "react";
-import { Customer } from "../domain/Customer";
+import React, { useState } from "react";
 import { Employee } from "../domain/Employee";
-import { Address } from "../domain/Address";
-import { Contact } from "../domain/Contact";
-
-import * as customerService from "../service/customerService";
 import * as employeeService from "../service/employeeService";
-import * as addressService from "../service/addressService";
-import * as contactService from "../service/contactService";
 
 const TestApi: React.FC = () => {
+    // State for form inputs
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [userName, setUserName] = useState("");
+    const [password, setPassword] = useState("");
+    const [position, setPosition] = useState("");
+    const [staffDiscount, setStaffDiscount] = useState(0);
 
-    // ---------------------- GET HANDLERS ----------------------
-    const handleGetCustomers = async () => {
-        try {
-            const customers: Customer[] = await customerService.getAllCustomers();
-            console.log("Customers:", customers);
-        } catch (err) {
-            console.error(err);
-        }
-    };
+    const [address, setAddress] = useState({
+        propertyNumber: 0,
+        buildingName: "",
+        unitNumber: 0,
+        poBoxNumber: 0,
+        street: "",
+        municipality: "",
+        province: "",
+        postalCode: "",
+        country: ""
+    });
 
-    const handleGetEmployees = async () => {
-        try {
-            const employees: Employee[] = await employeeService.getAllEmployees();
-            console.log("Employees:", employees);
-        } catch (err) {
-            console.error(err);
-        }
-    };
+    const [contact, setContact] = useState({
+        phoneNumber: "",
+        email: ""
+    });
 
-    const handleGetAddresses = async () => {
-        try {
-            const addresses: Address[] = await addressService.getAllAddresses();
-            console.log("Addresses:", addresses);
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    const handleGetContacts = async () => {
-        try {
-            const contacts: Contact[] = await contactService.getAllContacts();
-            console.log("Contacts:", contacts);
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    // ---------------------- POST HANDLERS ----------------------
-    const handleCreateAddress = async () => {
-        try {
-            const newAddress: Address = {
-                addressId: 0,
-                propertyNumber: 101,
-                buildingName: "Sunset Towers",
-                unitNumber: 1,
-                poBoxNumber: 1234,
-                street: "Main Street",
-                municipality: "Cape Town",
-                province: "Western Cape",
-                postalCode: "8001",
-                country: "South Africa"
-            };
-            const created = await addressService.createAddress(newAddress);
-            console.log("Created Address:", created);
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    const handleCreateContact = async () => {
-        try {
-            const newContact: Contact = {
-                contactId: 0,
-                phoneNumber: "0123456789",
-                email: "test@example.com"
-            };
-            const created = await contactService.createContact(newContact);
-            console.log("Created Contact:", created);
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    const handleCreateCustomer = async () => {
-        try {
-            const newCustomer: Customer = {
-                userId: 0,
-                firstName: "John",
-                lastName: "Doe",
-                userName: "john.doe",
-                password: "password123",
-                role: "CUSTOMER",
-                customerDiscount: 0, // required
-                address: {
-                    addressId: 0,
-                    propertyNumber: 101,
-                    buildingName: "Sunset Towers",
-                    unitNumber: 1,
-                    poBoxNumber: 1234,
-                    street: "Main Street",
-                    municipality: "Cape Town",
-                    province: "Western Cape",
-                    postalCode: "8001",
-                    country: "South Africa"
-                },
-                contact: {
-                    contactId: 0,
-                    phoneNumber: "0123456789",
-                    email: "john@example.com"
-                }
-            };
-
-            const created = await customerService.createCustomer(newCustomer);
-            console.log("Created Customer:", created);
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-
+    // Create Employee Handler
     const handleCreateEmployee = async () => {
         try {
             const newEmployee: Employee = {
                 userId: 0,
-                firstName: "Jane",
-                lastName: "Smith",
-                userName: "jane.smith",
-                password: "password123",
-                role: "EMPLOYEE",
-                position: "Manager",
-                staffDiscount: 0.15,
-                address: {
-                    addressId: 0,
-                    propertyNumber: 200,
-                    buildingName: "Ocean View",
-                    unitNumber: 2,
-                    poBoxNumber: 5678,
-                    street: "Beach Road",
-                    municipality: "Cape Town",
-                    province: "Western Cape",
-                    postalCode: "8002",
-                    country: "South Africa"
-                },
-                contact: {
-                    contactId: 0,
-                    phoneNumber: "0987654321",
-                    email: "jane@example.com"
-                }
+                firstName,
+                lastName,
+                userName,
+                password,
+                role: "EMPLOYEE", // auto role
+                position,
+                staffDiscount,
+                address: { ...address, addressId: 0 },
+                contact: { ...contact, contactId: 0 }
             };
+
             const created = await employeeService.createEmployee(newEmployee);
             console.log("Created Employee:", created);
+            alert(`Employee created! ID: ${created.userId}`);
         } catch (err) {
             console.error(err);
+            alert("Error creating employee, check console.");
+        }
+    };
+
+    // Get All Employees Handler
+    const handleGetEmployees = async () => {
+        try {
+            const employees: Employee[] = await employeeService.getAllEmployees();
+            console.log("Employees:", employees);
+            alert(`Fetched ${employees.length} employees! Check console for details.`);
+        } catch (err) {
+            console.error(err);
+            alert("Error fetching employees, check console.");
         }
     };
 
     return (
-        <div style={{ padding: "2rem" }}>
-            <h1>Test API Calls</h1>
+        <div style={{ padding: "2rem", maxWidth: "600px" }}>
+            <h1>Create Employee</h1>
 
-            {/* GET Buttons */}
-            <div style={{ marginBottom: "1rem" }}>
-                <button onClick={handleGetCustomers}>Get All Customers</button>
-            </div>
-            <div style={{ marginBottom: "1rem" }}>
+            {/* Employee Info */}
+            <h2>Employee Information</h2>
+            <input
+                placeholder="First Name"
+                value={firstName}
+                onChange={e => setFirstName(e.target.value)}
+            />
+            <input
+                placeholder="Last Name"
+                value={lastName}
+                onChange={e => setLastName(e.target.value)}
+            />
+            <input
+                placeholder="Username"
+                value={userName}
+                onChange={e => setUserName(e.target.value)}
+            />
+            <input
+                placeholder="Password"
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+            />
+            <input
+                placeholder="Position"
+                value={position}
+                onChange={e => setPosition(e.target.value)}
+            />
+            <input
+                placeholder="Staff Discount"
+                type="number"
+                value={staffDiscount}
+                onChange={e => setStaffDiscount(Number(e.target.value))}
+            />
+
+            {/* Address Section */}
+            <h2>Address</h2>
+            <input
+                placeholder="Property Number"
+                type="number"
+                value={address.propertyNumber}
+                onChange={e => setAddress({ ...address, propertyNumber: Number(e.target.value) })}
+            />
+            <input
+                placeholder="Building Name"
+                value={address.buildingName}
+                onChange={e => setAddress({ ...address, buildingName: e.target.value })}
+            />
+            <input
+                placeholder="Unit Number"
+                type="number"
+                value={address.unitNumber}
+                onChange={e => setAddress({ ...address, unitNumber: Number(e.target.value) })}
+            />
+            <input
+                placeholder="PO Box Number"
+                type="number"
+                value={address.poBoxNumber}
+                onChange={e => setAddress({ ...address, poBoxNumber: Number(e.target.value) })}
+            />
+            <input
+                placeholder="Street"
+                value={address.street}
+                onChange={e => setAddress({ ...address, street: e.target.value })}
+            />
+            <input
+                placeholder="Municipality"
+                value={address.municipality}
+                onChange={e => setAddress({ ...address, municipality: e.target.value })}
+            />
+            <input
+                placeholder="Province"
+                value={address.province}
+                onChange={e => setAddress({ ...address, province: e.target.value })}
+            />
+            <input
+                placeholder="Postal Code"
+                value={address.postalCode}
+                onChange={e => setAddress({ ...address, postalCode: e.target.value })}
+            />
+            <input
+                placeholder="Country"
+                value={address.country}
+                onChange={e => setAddress({ ...address, country: e.target.value })}
+            />
+
+            {/* Contact Section */}
+            <h2>Contact</h2>
+            <input
+                placeholder="Phone Number"
+                value={contact.phoneNumber}
+                onChange={e => setContact({ ...contact, phoneNumber: e.target.value })}
+            />
+            <input
+                placeholder="Email"
+                value={contact.email}
+                onChange={e => setContact({ ...contact, email: e.target.value })}
+            />
+
+            <div style={{ marginTop: "1rem" }}>
+                <button onClick={handleCreateEmployee} style={{ marginRight: "1rem" }}>
+                    Create Employee
+                </button>
                 <button onClick={handleGetEmployees}>Get All Employees</button>
-            </div>
-            <div style={{ marginBottom: "1rem" }}>
-                <button onClick={handleGetAddresses}>Get All Addresses</button>
-            </div>
-            <div style={{ marginBottom: "1rem" }}>
-                <button onClick={handleGetContacts}>Get All Contacts</button>
-            </div>
-
-            <hr />
-
-            {/* POST Buttons */}
-            <div style={{ marginBottom: "1rem" }}>
-                <button onClick={handleCreateCustomer}>Create Customer</button>
-            </div>
-            <div style={{ marginBottom: "1rem" }}>
-                <button onClick={handleCreateEmployee}>Create Employee</button>
-            </div>
-            <div style={{ marginBottom: "1rem" }}>
-                <button onClick={handleCreateAddress}>Create Address</button>
-            </div>
-            <div style={{ marginBottom: "1rem" }}>
-                <button onClick={handleCreateContact}>Create Contact</button>
             </div>
         </div>
     );
