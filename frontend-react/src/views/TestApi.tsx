@@ -30,6 +30,20 @@ const TestApi: React.FC = () => {
 
     // Create Employee Handler
     const handleCreateEmployee = async () => {
+        // Validate required fields
+        if (!firstName || !lastName || !userName || !password || !position || staffDiscount < 0) {
+            alert("Please fill in all employee fields");
+            return;
+        }
+        if (!address.street || !address.municipality || !address.province || !address.postalCode || !address.country) {
+            alert("Please fill in all required address fields");
+            return;
+        }
+        if (!contact.phoneNumber || !contact.email) {
+            alert("Please fill in all contact fields");
+            return;
+        }
+
         try {
             const newEmployee: Employee = {
                 userId: 0,
@@ -37,7 +51,7 @@ const TestApi: React.FC = () => {
                 lastName,
                 userName,
                 password,
-                role: "EMPLOYEE", // auto role
+                role: "EMPLOYEE",
                 position,
                 staffDiscount,
                 address: { ...address, addressId: 0 },
