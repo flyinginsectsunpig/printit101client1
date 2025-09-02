@@ -1,7 +1,7 @@
 import api from "./api";
 import { Customer } from "../domain/Customer";
 
-const CUSTOMER_URL = "/customer";
+const CUSTOMER_URL = "/api/customer";
 
 // GET all customers
 export const getAllCustomers = async (): Promise<Customer[]> => {
