@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import Login from './Login';
 import Register from './Register';
-import '../styles.css';
 
 interface AuthProps {
     onAuthSuccess: (user: any) => void;
@@ -11,21 +10,25 @@ interface AuthProps {
 const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
     const [isLogin, setIsLogin] = useState(true);
 
-    const handleAuthSuccess = (user: any) => {
-        onAuthSuccess(user);
+    const handleSwitchToRegister = () => {
+        setIsLogin(false);
+    };
+
+    const handleSwitchToLogin = () => {
+        setIsLogin(true);
     };
 
     return (
-        <div className="auth-wrapper">
+        <div>
             {isLogin ? (
                 <Login
-                    onLoginSuccess={handleAuthSuccess}
-                    onSwitchToRegister={() => setIsLogin(false)}
+                    onLoginSuccess={onAuthSuccess}
+                    onSwitchToRegister={handleSwitchToRegister}
                 />
             ) : (
                 <Register
-                    onRegisterSuccess={handleAuthSuccess}
-                    onSwitchToLogin={() => setIsLogin(true)}
+                    onRegisterSuccess={onAuthSuccess}
+                    onSwitchToLogin={handleSwitchToLogin}
                 />
             )}
         </div>
