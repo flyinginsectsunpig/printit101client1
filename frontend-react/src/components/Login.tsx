@@ -38,43 +38,45 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister }) => 
     };
 
     return (
-        <div className="auth-container">
-            <div className="auth-form">
-                <h2>Login</h2>
-                {error && <div className="error-message">{error}</div>}
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label htmlFor="userName">Username:</label>
-                        <input
-                            type="text"
-                            id="userName"
-                            name="userName"
-                            value={formData.userName}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="password">Password:</label>
-                        <input
-                            type="password"
-                            id="password"
-                            name="password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
-                    <button type="submit" disabled={loading}>
-                        {loading ? 'Logging in...' : 'Login'}
-                    </button>
-                </form>
-                <p>
-                    Don't have an account?{' '}
-                    <button type="button" className="link-button" onClick={onSwitchToRegister}>
-                        Register here
-                    </button>
-                </p>
+        <div className="auth-wrapper">
+            <div className="auth-container">
+                <div className="auth-form">
+                    <h2>Login</h2>
+                    {error && <div className="error-message">{error}</div>}
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <label htmlFor="userName">Username:</label>
+                            <input
+                                type="text"
+                                id="userName"
+                                name="userName"
+                                value={formData.userName}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="password">Password:</label>
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                value={formData.password}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+                        <button type="submit" disabled={loading}>
+                            {loading ? 'Logging in...' : 'Login'}
+                        </button>
+                    </form>
+                    <p>
+                        Don't have an account?{' '}
+                        <button type="button" className="link-button" onClick={onSwitchToRegister}>
+                            Register here
+                        </button>
+                    </p>
+                </div>
             </div>
         </div>
     );
