@@ -1,6 +1,6 @@
-
 import React, { useState } from 'react';
 import api from '../service/api';
+import Header from './Header';
 
 interface LoginProps {
     onLoginSuccess: (user: any) => void;
@@ -38,10 +38,10 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister }) => 
     };
 
     return (
-        <div className="auth-wrapper">
-            <div className="auth-container">
-                <div className="auth-form">
-                    <h2>Login</h2>
+        <div className="auth-wrapper" style={{ minHeight: '100vh', width: '100%', background: 'linear-gradient(135deg, #f0f9ff 0%, #ffffff 50%, #faf5ff 100%)', fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Header page="login" onButtonClick={onSwitchToRegister} />
+            <div className="auth-container" style={{ maxWidth: '1280px', margin: '0 auto', padding: '2.5rem 1rem', flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
+                <div className="auth-form" style={{ width: '100%', maxWidth: '400px', maxHeight: 'calc(100vh - 72px)', overflowY: 'auto' }}>
                     {error && <div className="error-message">{error}</div>}
                     <form onSubmit={handleSubmit}>
                         <div className="form-group">
