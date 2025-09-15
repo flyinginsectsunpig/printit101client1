@@ -3,29 +3,33 @@ import React, { useState } from "react";
 
 function App() {
   const [payment, setPayment] = useState({ amount: "", method: "" });
-  const [response, setResponse] = useState(null);
+    const [response, setResponse] = useState<string | null>(null);
 
-  const handleChange = (e) => {
-    setPayment({ ...payment, [e.target.name]: e.target.value });
-  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch("http://localhost:8080/api/payments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payment),
-      });
-      const data = await res.json();
-      setResponse(data);
-    } catch (err) {
-      console.error("Error submitting payment:", err);
-      setResponse({ error: "Payment failed" });
-    }
-  };
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        console.log(e.target.value);
+    };
 
-  return (
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        try {
+            const res = await fetch("http://localhost:8080/api/payments", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payment),
+            });
+
+            const data = await res.json();
+            setResponse(data); // make sure the state type matches the API response
+        } catch (err) {
+            console.error("Error submitting payment:", err);
+            setResponse({ error: "Payment failed" } as any); // or adjust type of response state
+        }
+    };
+
+    return (
     <div style={{ padding: "20px" }}>
       <h1>Payment API Test</h1>
       <form onSubmit={handleSubmit}>
