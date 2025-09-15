@@ -1,51 +1,49 @@
-import React from "react";
-import { useCart } from "../context/CartContext";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { useCart, CartItem } from "../context/CartContext";
+import { Link } from "react-router-dom";
+import { ShoppingCart } from "lucide-react";
 
-export const Cart = () => {
-  const { items, removeItem, updateQuantity, total } = useCart();
-  const navigate = useNavigate();
+export const Cart: React.FC = () => {
+    const { cart, removeFromCart } = useCart();
+    const [isOpen, setIsOpen] = useState(false);
 
-  return (
-    <div style={{ padding: 20 }}>
-      <h2>Your cart</h2>
-      {items.length === 0 ? (
-        <div>
-          <p>Cart is empty.</p>
-          <Link to="/">Continue shopping</Link>
+    const total = cart.reduce(
+        (sum: number, item: CartItem) => sum + item.price * item.quantity,
+        0
+    );
+
+    return (
+        <div style={{ position: "fixed", top: "20px", right: "20px", zIndex: 1000 }}>
+            {/* Cart Icon */}
+            <button onClick={() => setIsOpen(!isOpen)}>
+                <ShoppingCart size={24} />
+                {cart.length > 0 && <span>{cart.length}</span>}
+            </button>
+
+            {/* Cart Dropdown */}
+            {isOpen && (
+                <div>
+                    {cart.length === 0 ? (
+                        <p>No items yet.</p>
+                    ) : (
+                        <>
+                            {cart.map((item: CartItem) => (
+                                <div key={item.id}>
+                  <span>
+                    {item.name} x {item.quantity}
+                  </span>
+                                    <span>R{(item.price * item.quantity).toFixed(2)}</span>
+                                    <button onClick={() => removeFromCart(item.id)}>❌</button>
+                                </div>
+                            ))}
+                            <p>Total: R{total.toFixed(2)}</p>
+                            <Link to="/checkout">
+                                <button>Checkout</button>
+                            </Link>
+                        </>
+                    )}
+                </div>
+            )}
         </div>
-      ) : (
-        <>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <th>Item</th><th>Price</th><th>Qty</th><th>Subtotal</th><th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map(it => (
-                <tr key={it.id}>
-                  <td>{it.name}</td>
-                  <td>{it.price.toFixed(2)}</td>
-                  <td>
-                    <input type="number" min={1} value={it.quantity} onChange={e => updateQuantity(it.id!, Math.max(1, parseInt(e.target.value || "1")))} />
-                  </td>
-                  <td>{(it.price * it.quantity).toFixed(2)}</td>
-                  <td><button onClick={() => removeItem(it.id!)}>Remove</button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <div style={{ marginTop: 20, textAlign: "right" }}>
-            <strong>Total: R{total.toFixed(2)}</strong>
-          </div>
-
-          <div style={{ marginTop: 20 }}>
-            <button onClick={() => navigate("/checkout")}>Proceed to checkout</button>
-          </div>
-        </>
-      )}
-    </div>
-  );
+    );
 };
