@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Upload, ShoppingCart, User, Shirt, AlertCircle } from 'lucide-react';
 import Auth from './Auth';
 
-// Import the two page components (these would be separate files in your project)
-// For this demo, I'll include simplified versions inline
 
 const TShirtDesignerMain: React.FC = () => {
     const [currentStep, setCurrentStep] = useState<'upload' | 'positioning'>('upload');
@@ -926,86 +924,6 @@ const TShirtDesignerMain: React.FC = () => {
                     />
                 )}
             </main>
-
-            {/* Progress Indicator */}
-            <div style={{
-                position: 'fixed',
-                bottom: '2rem',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                background: 'rgba(255, 255, 255, 0.9)',
-                backdropFilter: 'blur(10px)',
-                padding: '1rem 2rem',
-                borderRadius: '9999px',
-                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
-                border: '1px solid #f3f4f6',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem'
-            }}>
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                }}>
-                    <div style={{
-                        width: '2rem',
-                        height: '2rem',
-                        borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #2563eb, #9333ea)',
-                        color: 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '0.875rem',
-                        fontWeight: 'bold'
-                    }}>
-                        1
-                    </div>
-                    <span style={{ 
-                        fontSize: '0.875rem', 
-                        fontWeight: currentStep === 'upload' ? 'bold' : 'normal',
-                        color: currentStep === 'upload' ? '#2563eb' : '#6b7280'
-                    }}>
-                        Product Details
-                    </span>
-                </div>
-                
-                <div style={{
-                    width: '2rem',
-                    height: '2px',
-                    background: currentStep === 'positioning' ? 'linear-gradient(to right, #2563eb, #9333ea)' : '#e5e7eb',
-                    borderRadius: '1px'
-                }} />
-                
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                }}>
-                    <div style={{
-                        width: '2rem',
-                        height: '2rem',
-                        borderRadius: '50%',
-                        background: currentStep === 'positioning' ? 'linear-gradient(135deg, #2563eb, #9333ea)' : '#e5e7eb',
-                        color: currentStep === 'positioning' ? 'white' : '#9ca3af',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '0.875rem',
-                        fontWeight: 'bold'
-                    }}>
-                        2
-                    </div>
-                    <span style={{ 
-                        fontSize: '0.875rem', 
-                        fontWeight: currentStep === 'positioning' ? 'bold' : 'normal',
-                        color: currentStep === 'positioning' ? '#2563eb' : '#6b7280'
-                    }}>
-                        Design Positioning
-                    </span>
-                </div>
-            </div>
         </div>
     );
 };
