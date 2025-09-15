@@ -253,27 +253,6 @@ const Profile: React.FC = () => {
                             </h3>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <div className="form-group">
-                                    <label htmlFor="userId">User ID:</label>
-                                    <input
-                                        type="number"
-                                        id="userId"
-                                        name="userId"
-                                        value={formData.userId}
-                                        onChange={handleChange}
-                                        required
-                                        readOnly
-                                        style={{
-                                            width: '100%',
-                                            padding: '0.75rem',
-                                            borderRadius: '0.5rem',
-                                            border: '1px solid #d1d5db',
-                                            fontSize: '1rem',
-                                            color: '#111827',
-                                            backgroundColor: '#f3f4f6'
-                                        }}
-                                    />
-                                </div>
-                                <div className="form-group">
                                     <label htmlFor="firstName">First Name:</label>
                                     <input
                                         type="text"
