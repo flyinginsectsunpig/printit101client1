@@ -42,7 +42,7 @@ function Layout() {
                 <Route path="/customer-test-api" element={<CustomerTestApi />} />
                 <Route path="/customer-demo" element={<CustomerDemo />} />
                 <Route path="/tshirt-designer" element={<TShirtDesignerMain />} /> {/* Updated component */}
-                <Route path="/tshirt-designer" element={<TShirtDesigner />} />
+
                 <Route path="/placement-test-api" element={<PlacementDataTestApi />} />
                 <Route path="/scale-test-api" element={<ScaleTestApi />} />
                 <Route path="/position-test-api" element={<PositionTestApi />} />

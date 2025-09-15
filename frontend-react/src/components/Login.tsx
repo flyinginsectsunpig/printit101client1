@@ -9,9 +9,10 @@ interface LoginProps {
     onSwitchToRegister: () => void;
 }
 
-const { login } = useAuth();
+
 
 const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister }) => {
+    const { login } = useAuth();
     const [formData, setFormData] = useState({
         userName: '',
         password: ''
