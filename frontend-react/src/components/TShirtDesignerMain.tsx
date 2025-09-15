@@ -38,6 +38,56 @@ const TShirtDesignerMain: React.FC = () => {
         setTimeout(() => setNotification(''), 3000);
     };
 
+    // Helper function to safely parse JSON responses
+    const safeJsonParse = async (response: Response) => {
+        try {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.log('Non-JSON response:', text);
+                return { success: true, message: text };
+            }
+
+            const text = await response.text();
+            if (!text.trim()) {
+                console.log('Empty response body');
+                return { success: true, message: 'Empty response' };
+            }
+
+            return JSON.parse(text);
+        } catch (error) {
+            console.error('JSON parse error:', error);
+            const text = await response.text();
+            return { success: false, error: 'Invalid JSON response', rawResponse: text };
+        }
+    };
+
+    // Helper function to make API calls with proper error handling
+    const makeApiCall = async (url: string, options: RequestInit, fallbackData?: any) => {
+        try {
+            console.log(`Making API call to: ${url}`);
+            const response = await fetch(url, options);
+            
+            console.log(`Response status: ${response.status}`);
+            console.log(`Response ok: ${response.ok}`);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await safeJsonParse(response);
+            console.log('API response data:', data);
+            return data;
+        } catch (error) {
+            console.error(`API call failed for ${url}:`, error);
+            if (fallbackData) {
+                console.log('Using fallback data:', fallbackData);
+                return fallbackData;
+            }
+            throw error;
+        }
+    };
+
     if (!user) {
         return <Auth onAuthSuccess={handleAuthSuccess} />;
     }
@@ -55,6 +105,8 @@ const TShirtDesignerMain: React.FC = () => {
 
     const handleSaveDesign = async (data: any) => {
         try {
+            console.log('Starting design save process with data:', data);
+
             // Create design first
             const formData = new FormData();
             const response = await fetch(data.tshirtData.uploadedImage);
@@ -69,121 +121,110 @@ const TShirtDesignerMain: React.FC = () => {
 
             let filePath;
             if (uploadResponse.ok) {
-                filePath = await uploadResponse.text();
+                // Check if response has content before parsing
+                const contentType = uploadResponse.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const uploadData = await uploadResponse.json();
+                    filePath = uploadData.filePath || uploadData.path || data.tshirtData.uploadedImage;
+                } else {
+                    filePath = await uploadResponse.text() || data.tshirtData.uploadedImage;
+                }
             } else {
+                console.warn('Upload failed, using fallback path');
                 filePath = data.tshirtData.uploadedImage; // Fallback
             }
 
+            // Create design with proper error handling
             const designData = { filePath: filePath };
-            const designResponse = await fetch(`${API_BASE}/design/create`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${user.token}`
+            const design = await makeApiCall(
+                `${API_BASE}/design/create`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${user.token}`
+                    },
+                    body: JSON.stringify(designData)
                 },
-                body: JSON.stringify(designData)
-            });
+                { designId: Date.now(), filePath: filePath } // Fallback
+            );
 
-            let design;
-            if (designResponse.ok) {
-                design = await designResponse.json();
-            } else {
-                design = { designId: Date.now(), filePath: filePath };
-            }
-
-            // Create position
+            // Create position with proper error handling
             const positionData = {
                 x: data.position.x,
                 y: data.position.y,
-                z: 0
             };
 
-            const positionResponse = await fetch(`${API_BASE}/position/create`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${user.token}`
+            const position = await makeApiCall(
+                `${API_BASE}/position/create`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${user.token}`
+                    },
+                    body: JSON.stringify(positionData)
                 },
-                body: JSON.stringify(positionData)
-            });
+                { positionId: Date.now(), ...positionData } // Fallback
+            );
 
-            let position;
-            if (positionResponse.ok) {
-                position = await positionResponse.json();
-            } else {
-                position = { positionId: Date.now(), ...positionData };
-            }
-
-            // Create rotation
+            // Create rotation with proper error handling
             const rotationData = {
-                x: 0,
-                y: 0,
-                z: data.rotation
+                angle: data.rotation
             };
 
-            const rotationResponse = await fetch(`${API_BASE}/rotation/create`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${user.token}`
+            const rotation = await makeApiCall(
+                `${API_BASE}/rotation/create`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${user.token}`
+                    },
+                    body: JSON.stringify(rotationData)
                 },
-                body: JSON.stringify(rotationData)
-            });
+                { rotationId: Date.now() + 1, ...rotationData } // Fallback
+            );
 
-            let rotation;
-            if (rotationResponse.ok) {
-                rotation = await rotationResponse.json();
-            } else {
-                rotation = { rotationId: Date.now() + 1, ...rotationData };
-            }
-
-            // Create scale
+            // Create scale with proper error handling
             const scaleData = {
-                x: data.scale,
-                y: data.scale,
-                z: 1
+                value: data.scale
             };
 
-            const scaleResponse = await fetch(`${API_BASE}/scale/create`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${user.token}`
+            const scale = await makeApiCall(
+                `${API_BASE}/scale/create`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${user.token}`
+                    },
+                    body: JSON.stringify(scaleData)
                 },
-                body: JSON.stringify(scaleData)
-            });
+                { scaleId: Date.now() + 2, ...scaleData } // Fallback
+            );
 
-            let scale;
-            if (scaleResponse.ok) {
-                scale = await scaleResponse.json();
-            } else {
-                scale = { scaleId: Date.now() + 2, ...scaleData };
-            }
-
-            // Create placement data
+            // Create placement data with proper error handling
             const placementData = {
                 position: position,
                 rotation: rotation,
                 scale: scale
             };
 
-            const placementResponse = await fetch(`${API_BASE}/placement-data/create`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${user.token}`
+            const placement = await makeApiCall(
+                `${API_BASE}/placement-data/create`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${user.token}`
+                    },
+                    body: JSON.stringify(placementData)
                 },
-                body: JSON.stringify(placementData)
-            });
+                { placementDataId: Date.now() + 3, ...placementData } // Fallback
+            );
 
-            let placement;
-            if (placementResponse.ok) {
-                placement = await placementResponse.json();
-            } else {
-                placement = { placementDataId: Date.now() + 3, ...placementData };
-            }
-
-            // Create t-shirt
+            // Create t-shirt with proper error handling
             const tshirtCreateData = {
                 designId: design.designId,
                 placementDataId: placement.placementDataId,
@@ -194,15 +235,20 @@ const TShirtDesignerMain: React.FC = () => {
                 size: data.tshirtData.selectedSize
             };
 
-            const tshirtResponse = await fetch(`${API_BASE}/tshirt/create`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${user.token}`
+            const tshirtResult = await makeApiCall(
+                `${API_BASE}/tshirt/create`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${user.token}`
+                    },
+                    body: JSON.stringify(tshirtCreateData)
                 },
-                body: JSON.stringify(tshirtCreateData)
-            });
+                { tshirtId: Date.now() + 4, ...tshirtCreateData } // Fallback
+            );
 
+            console.log('T-shirt creation result:', tshirtResult);
             showNotification('T-shirt design saved successfully!');
 
             // Reset the form after successful save
@@ -213,13 +259,7 @@ const TShirtDesignerMain: React.FC = () => {
 
         } catch (error) {
             console.error('Error saving design:', error);
-            showNotification('Design saved locally (backend may be unavailable)');
-            
-            // Still reset after showing error
-            setTimeout(() => {
-                setCurrentStep('upload');
-                setTshirtData(null);
-            }, 2000);
+            showNotification('Error saving design. Please try again.');
         }
     };
 

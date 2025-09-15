@@ -1,5 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Plus, Minus, Save, Shirt, RotateCcw, ArrowLeft as BackArrow, AlertCircle } from 'lucide-react';
+import * as placementService from "../service/PlacementDataService";
+import * as positionService from "../service/PositionService";
+import * as rotationService from "../service/RotationService";
+import * as scaleService from "../service/ScaleService";
+import { PlacementData } from "../domain/PlacementData";
+import { Scale } from "../domain/Scale";
+import { Position } from "../domain/Position";
+import { Rotation } from "../domain/Rotation";
 
 interface DesignPosition {
     x: number;
@@ -40,6 +48,8 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
     const [designRotation, setDesignRotation] = useState<number>(0);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [notification, setNotification] = useState<string>('');
+    const [isSaving, setIsSaving] = useState<boolean>(false);
+    const [backendConnected, setBackendConnected] = useState<boolean>(false);
 
     const colors: Color[] = [
         { name: 'White', value: 'white', hex: '#ffffff' },
@@ -52,9 +62,26 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
         { name: 'Pink', value: 'pink', hex: '#ec4899' }
     ];
 
+    // Test backend connectivity on component mount
+    useEffect(() => {
+        const testBackendConnection = async () => {
+            try {
+                await positionService.getAllPositions();
+                setBackendConnected(true);
+                console.log('Backend connection successful');
+            } catch (error) {
+                console.error('Backend connection failed:', error);
+                setBackendConnected(false);
+                showNotification('Warning: Backend connection failed. Check if Spring Boot is running on port 8080.');
+            }
+        };
+
+        testBackendConnection();
+    }, []);
+
     const showNotification = (message: string): void => {
         setNotification(message);
-        setTimeout(() => setNotification(''), 3000);
+        setTimeout(() => setNotification(''), 5000); // Increased timeout for backend warning
     };
 
     const getCurrentColorHex = (): string => {
@@ -107,22 +134,61 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
         showNotification('Design position, scale, and rotation reset');
     };
 
-    const handleSave = async (): Promise<void> => {
-        setIsLoading(true);
-        try {
-            await onSave({
-                tshirtData,
-                position: designPosition,
-                scale: designScale,
-                rotation: designRotation
-            });
-        } catch (error) {
-            console.error('Error saving design:', error);
-            showNotification('Error saving design');
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    const savePositioning = async (): Promise<void> => {
+    if (!backendConnected) {
+        showNotification('Cannot save: Backend is not connected.');
+        return;
+    }
+
+    setIsSaving(true);
+    setIsLoading(true);
+
+    try {
+        console.log('Saving T-shirt placement data...');
+        console.log('Current design values:', { x: designPosition.x, y: designPosition.y, scale: designScale, rotation: designRotation });
+
+        // Save Rotation
+        const savedRotation: Rotation = await rotationService.createRotation({ angle: designRotation });
+        console.log('Rotation saved:', savedRotation);
+
+        if (!savedRotation?.rotationId) throw new Error('Rotation not saved correctly');
+
+        // Save Position
+        const savedPosition: Position = await positionService.createPosition({ x: designPosition.x, y: designPosition.y });
+        console.log('Position saved:', savedPosition);
+        if (!savedPosition?.positionId) throw new Error('Position not saved correctly');
+
+        // Save Scale
+        const savedScale: Scale = await scaleService.createScale({ value: designScale });
+        console.log('Scale saved:', savedScale);
+        if (!savedScale?.scaleId) throw new Error('Scale not saved correctly');
+
+        // Save PlacementData
+        const savedPlacementData: PlacementData = await placementService.createPlacementData({
+            rotation: savedRotation,
+            position: savedPosition,
+            scale: savedScale
+        });
+        console.log('PlacementData saved successfully:', savedPlacementData);
+
+        showNotification('Design saved successfully!');
+        onSave({
+            tshirtData,
+            position: designPosition,
+            scale: designScale,
+            rotation: designRotation
+        });
+
+    } catch (error) {
+        console.error('Error saving placement data:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        showNotification(`Failed to save design: ${errorMessage}`);
+    } finally {
+        setIsSaving(false);
+        setIsLoading(false);
+    }
+};
+
 
     return (
         <div style={{
@@ -135,7 +201,9 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
                     position: 'fixed',
                     top: '1.5rem',
                     right: '1.5rem',
-                    background: 'linear-gradient(to right, #2563eb, #9333ea)',
+                    background: notification.includes('Error') || notification.includes('Warning') 
+                        ? 'linear-gradient(to right, #dc2626, #b91c1c)' 
+                        : 'linear-gradient(to right, #2563eb, #9333ea)',
                     color: 'white',
                     padding: '1rem 1.5rem',
                     borderRadius: '0.75rem',
@@ -144,9 +212,12 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.75rem',
-                    fontWeight: '500'
+                    fontWeight: '500',
+                    maxWidth: '400px',
+                    fontSize: '0.875rem',
+                    lineHeight: '1.4'
                 }}>
-                    <AlertCircle style={{ height: '1.25rem', width: '1.25rem' }} />
+                    <AlertCircle style={{ height: '1.25rem', width: '1.25rem', minWidth: '1.25rem' }} />
                     <span>{notification}</span>
                 </div>
             )}
@@ -193,10 +264,39 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
                         </span>
                     </div>
                     <div style={{
-                        fontSize: '1rem',
-                        color: '#6b7280'
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '1rem'
                     }}>
-                        Welcome, {user?.firstName || 'User'}!
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            padding: '0.5rem 0.75rem',
+                            borderRadius: '0.5rem',
+                            background: backendConnected ? '#dcfce7' : '#fef2f2',
+                            border: `1px solid ${backendConnected ? '#bbf7d0' : '#fecaca'}`
+                        }}>
+                            <div style={{
+                                width: '8px',
+                                height: '8px',
+                                borderRadius: '50%',
+                                background: backendConnected ? '#16a34a' : '#dc2626'
+                            }}></div>
+                            <span style={{
+                                fontSize: '0.75rem',
+                                color: backendConnected ? '#166534' : '#991b1b',
+                                fontWeight: '500'
+                            }}>
+                                {backendConnected ? 'Backend Connected' : 'Backend Disconnected'}
+                            </span>
+                        </div>
+                        <div style={{
+                            fontSize: '1rem',
+                            color: '#6b7280'
+                        }}>
+                            Welcome, {user?.firstName || 'User'}!
+                        </div>
                     </div>
                 </div>
             </header>
@@ -528,8 +628,8 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
                                 <span>Back</span>
                             </button>
                             <button
-                                onClick={handleSave}
-                                disabled={isLoading}
+                                onClick={savePositioning}
+                                disabled={isSaving || !backendConnected}
                                 style={{
                                     flex: '1',
                                     display: 'flex',
@@ -537,18 +637,28 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
                                     justifyContent: 'center',
                                     gap: '0.75rem',
                                     padding: '1rem 1.5rem',
-                                    background: isLoading ? '#9ca3af' : 'linear-gradient(to right, #2563eb, #9333ea)',
+                                    background: (isSaving || !backendConnected) 
+                                        ? '#9ca3af' 
+                                        : 'linear-gradient(to right, #2563eb, #9333ea)',
                                     color: 'white',
                                     borderRadius: '0.75rem',
                                     border: 'none',
                                     fontWeight: '600',
-                                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                                    cursor: (isSaving || !backendConnected) ? 'not-allowed' : 'pointer',
                                     transition: 'all 0.2s',
-                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                                    opacity: (isSaving || !backendConnected) ? 0.7 : 1
                                 }}
                             >
                                 <Save style={{ height: '1.25rem', width: '1.25rem' }} />
-                                <span>{isLoading ? 'Saving...' : 'Save & Finish'}</span>
+                                <span>
+                                    {!backendConnected 
+                                        ? 'Backend Disconnected' 
+                                        : isSaving 
+                                        ? 'Saving...' 
+                                        : 'Save & Finish'
+                                    }
+                                </span>
                             </button>
                         </div>
                     </div>
