@@ -59,10 +59,13 @@ export const Checkout = () => {
             <option value="CRYPTOCURRENCY">Cryptocurrency</option>
           </select>
         </div>
+          <div style={{ marginTop: 12 }}>
+              <strong>Order total:</strong>{" "}
+              <span style={{ fontWeight: 'bold', color: '#2563eb' }}>
+    R{total.toFixed(2)}
+  </span>
+          </div>
 
-        <div style={{ marginTop: 12 }}>
-          <strong>Order total:</strong> R{total.toFixed(2)}
-        </div>
 
         {method === "BANK_TRANSFER" && bankInfo && (
           <div style={{ marginTop: 12, padding: 12, border: "1px solid #ddd" }}>
