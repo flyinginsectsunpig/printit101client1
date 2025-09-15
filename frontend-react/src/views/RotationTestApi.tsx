@@ -3,13 +3,11 @@ import { Rotation } from "../domain/Rotation";
 import * as rotationService from "../service/RotationService";
 
 const RotationTestApi: React.FC = () => {
-    const [x, setX] = useState(0);
-    const [y, setY] = useState(0);
-    const [z, setZ] = useState(0);
+    const [angle, setAngle] = useState(0);
 
     const handleCreateRotation = async () => {
         try {
-            const newRotation: Rotation = { rotationId: 0, x, y, z };
+            const newRotation: Rotation = { angle };
             const created = await rotationService.createRotation(newRotation);
             console.log("Created Rotation:", created);
             alert(`Rotation created with ID: ${created.rotationId}`);
@@ -33,9 +31,12 @@ const RotationTestApi: React.FC = () => {
     return (
         <div style={{ padding: "2rem" }}>
             <h1>Rotation Test</h1>
-            <input type="number" placeholder="X" value={x} onChange={(e) => setX(Number(e.target.value))} />
-            <input type="number" placeholder="Y" value={y} onChange={(e) => setY(Number(e.target.value))} />
-            <input type="number" placeholder="Z" value={z} onChange={(e) => setZ(Number(e.target.value))} />
+            <input
+                type="number"
+                placeholder="Angle"
+                value={angle}
+                onChange={(e) => setAngle(Number(e.target.value))}
+            />
             <div style={{ marginTop: "1rem" }}>
                 <button onClick={handleCreateRotation}>Create Rotation</button>
                 <button onClick={handleGetAll}>Get All Rotations</button>
