@@ -57,10 +57,6 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
         setLoading(true);
         setError('');
 
-        console.log('Form data being sent:', JSON.stringify(formData, null, 2));
-        console.log('propertyNumber type:', typeof formData.address.propertyNumber, 'value:', formData.address.propertyNumber);
-        console.log('poBoxNumber type:', typeof formData.address.poBoxNumber, 'value:', formData.address.poBoxNumber);
-
         try {
             const response = await api.post('/auth/register', formData);
             onRegisterSuccess(response.data);
@@ -76,7 +72,6 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
             <Header page="register" onButtonClick={onSwitchToLogin} />
             <div className="auth-container" style={{ maxWidth: '1280px', margin: '0 auto', padding: '2.5rem 1rem', flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 <div className="auth-form" style={{ width: '100%', maxWidth: '800px' }}>
-                    {/*<h2>Register</h2>*/}
                     {error && <div className="error-message">{error}</div>}
                     <form onSubmit={handleSubmit}>
                         <div className="section" style={{ marginBottom: '2rem' }}>

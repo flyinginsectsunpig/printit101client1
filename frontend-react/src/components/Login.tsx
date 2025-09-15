@@ -3,13 +3,10 @@ import api from '../service/api';
 import Header from './Header';
 import { useAuth } from '../context/AuthContext';
 
-
 interface LoginProps {
     onLoginSuccess: (user: any) => void;
     onSwitchToRegister: () => void;
 }
-
-
 
 const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister }) => {
     const { login } = useAuth();
@@ -34,7 +31,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister }) => 
 
         try {
             const response = await api.post('/auth/login', formData);
-            login();
+            login(response.data); // Pass user data to context
             onLoginSuccess(response.data);
         } catch (error: any) {
             setError(error.response?.data?.message || 'Login failed');
