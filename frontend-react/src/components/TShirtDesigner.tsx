@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, ShoppingCart, User, Palette, Shirt, Eye, Package, Save, AlertCircle, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Plus, Minus } from 'lucide-react';
+import { Upload, ShoppingCart, Palette, Shirt, Eye, Package, Save, AlertCircle, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Plus, Minus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Auth from './Auth';
 import api from '../service/api';
 import Header from './Header';
 
-// Define types for our state
 interface DesignPosition {
     x: number;
     y: number;
@@ -72,15 +71,13 @@ const TShirtDesigner: React.FC = () => {
     const isMedium = windowWidth >= 768;
     const isSmall = windowWidth >= 640;
 
-    // Stabilize fetchTshirts with useCallback
     const fetchTshirts = useCallback(async () => {
         if (!user?.token) return;
         setIsLoading(true);
         try {
-            const response = await api.get('/tshirt/getAll', {
+            await api.get('/tshirt/getAll', {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
-            // tshirts not used in UI, so no setTshirts
         } catch (error) {
             console.error('Error fetching t-shirts:', error);
             showNotification('Failed to fetch t-shirts');
@@ -95,6 +92,7 @@ const TShirtDesigner: React.FC = () => {
 
     const handleAuthSuccess = (userData: any) => {
         login(userData);
+        navigate('/tshirt-designer');
     };
 
     const handleLogout = () => {
@@ -104,6 +102,7 @@ const TShirtDesigner: React.FC = () => {
         setDesignPosition({ x: 0, y: 0 });
         setDesignScale(1);
         setNotification('');
+        navigate('/login');
     };
 
     if (!user) {
