@@ -1,6 +1,10 @@
-import React, {useState, useEffect, ChangeEvent, useRef} from 'react';
-import { Upload, ShoppingCart, User, Menu, X, Palette, Shirt, Eye, Package, Save, AlertCircle, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Plus, Minus } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Upload, ShoppingCart, User, Palette, Shirt, Eye, Package, Save, AlertCircle, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Plus, Minus } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import Auth from './Auth';
+import api from '../service/api';
+import Header from './Header';
 
 // Define types for our state
 interface DesignPosition {
@@ -26,20 +30,19 @@ interface TShirt {
 }
 
 const TShirtDesigner: React.FC = () => {
+    const { user, login, logout } = useAuth();
     const [selectedView, setSelectedView] = useState<string>('front');
     const [selectedColor, setSelectedColor] = useState<string>('white');
     const [selectedSize, setSelectedSize] = useState<string>('M');
     const [uploadedImage, setUploadedImage] = useState<string | null>(null);
     const [uploadedFileName, setUploadedFileName] = useState<string>('');
-    const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
     const [designPosition, setDesignPosition] = useState<DesignPosition>({ x: 0, y: 0 });
     const [designScale, setDesignScale] = useState<number>(1);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [notification, setNotification] = useState<string>('');
-    const [tshirts, setTshirts] = useState<TShirt[]>([]);
     const [windowWidth, setWindowWidth] = useState<number>(1024);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [user, setUser] = useState<any>(null);
+    const navigate = useNavigate();
 
     const API_BASE = 'http://localhost:8080';
 
@@ -69,32 +72,37 @@ const TShirtDesigner: React.FC = () => {
     const isMedium = windowWidth >= 768;
     const isSmall = windowWidth >= 640;
 
-    useEffect(() => {
-        const savedUser = sessionStorage.getItem('currentUser');
-        if (savedUser) {
-            setUser(JSON.parse(savedUser));
+    // Stabilize fetchTshirts with useCallback
+    const fetchTshirts = useCallback(async () => {
+        if (!user?.token) return;
+        setIsLoading(true);
+        try {
+            const response = await api.get('/tshirt/getAll', {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            // tshirts not used in UI, so no setTshirts
+        } catch (error) {
+            console.error('Error fetching t-shirts:', error);
+            showNotification('Failed to fetch t-shirts');
+        } finally {
+            setIsLoading(false);
         }
-    }, []);
+    }, [user?.token]);
 
     useEffect(() => {
-        if (user) {
-            fetchTshirts();
-        }
-    }, [user]);
+        fetchTshirts();
+    }, [fetchTshirts]);
 
     const handleAuthSuccess = (userData: any) => {
-        setUser(userData);
-        sessionStorage.setItem('currentUser', JSON.stringify(userData));
+        login(userData);
     };
 
     const handleLogout = () => {
-        setUser(null);
-        sessionStorage.removeItem('currentUser');
+        logout();
         setUploadedImage(null);
         setUploadedFileName('');
         setDesignPosition({ x: 0, y: 0 });
         setDesignScale(1);
-        setTshirts([]);
         setNotification('');
     };
 
@@ -102,24 +110,12 @@ const TShirtDesigner: React.FC = () => {
         return <Auth onAuthSuccess={handleAuthSuccess} />;
     }
 
-    const fetchTshirts = async (): Promise<void> => {
-        try {
-            const response = await fetch(`${API_BASE}/tshirt/getAll`);
-            if (response.ok) {
-                const data = await response.json();
-                setTshirts(data);
-            }
-        } catch (error) {
-            console.error('Error fetching t-shirts:', error);
-        }
-    };
-
     const showNotification = (message: string): void => {
         setNotification(message);
         setTimeout(() => setNotification(''), 3000);
     };
 
-    const handleImageUpload = (event: ChangeEvent<HTMLInputElement>): void => {
+    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>): void => {
         const file = event.target.files?.[0];
         if (file) {
             if (!file.type.startsWith('image/')) {
@@ -163,36 +159,22 @@ const TShirtDesigner: React.FC = () => {
             const file = new File([blob], uploadedFileName, { type: blob.type });
             formData.append('file', file);
 
-            const uploadResponse = await fetch(`${API_BASE}/upload`, {
-                method: 'POST',
-                body: formData,
+            const uploadResponse = await api.post('/upload', formData, {
+                headers: { Authorization: `Bearer ${user.token}` }
             });
 
-            if (!uploadResponse.ok) {
-                const errorText = await uploadResponse.text();
-                throw new Error(`Upload failed: ${errorText}`);
-            }
-
-            const filePath = await uploadResponse.text();
+            const filePath = uploadResponse.data;
 
             const designData = {
                 filePath: filePath
             };
 
-            const designResponse = await fetch(`${API_BASE}/design/create`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${user.token}`
-                },
-                body: JSON.stringify(designData)
+            const designResponse = await api.post('/design/create', designData, {
+                headers: { Authorization: `Bearer ${user.token}` }
             });
 
-            if (!designResponse.ok) throw new Error('Failed to create design');
-            const design = await designResponse.json();
-
             showNotification('Design saved successfully!');
-            return design;
+            return designResponse.data;
         } catch (error) {
             console.error('Error creating design:', error);
             showNotification('Design saved locally (backend unavailable)');
@@ -218,21 +200,10 @@ const TShirtDesigner: React.FC = () => {
                 z: 0
             };
 
-            const positionResponse = await fetch(`${API_BASE}/position/create`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${user.token}`
-                },
-                body: JSON.stringify(positionData)
+            const positionResponse = await api.post('/position/create', positionData, {
+                headers: { Authorization: `Bearer ${user.token}` }
             });
-
-            let position;
-            if (positionResponse.ok) {
-                position = await positionResponse.json();
-            } else {
-                position = { id: Date.now(), ...positionData };
-            }
+            const position = positionResponse.data;
 
             const rotationData = {
                 x: 0,
@@ -240,21 +211,10 @@ const TShirtDesigner: React.FC = () => {
                 z: 0
             };
 
-            const rotationResponse = await fetch(`${API_BASE}/rotation/create`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${user.token}`
-                },
-                body: JSON.stringify(rotationData)
+            const rotationResponse = await api.post('/rotation/create', rotationData, {
+                headers: { Authorization: `Bearer ${user.token}` }
             });
-
-            let rotation;
-            if (rotationResponse.ok) {
-                rotation = await rotationResponse.json();
-            } else {
-                rotation = { id: Date.now() + 1, ...rotationData };
-            }
+            const rotation = rotationResponse.data;
 
             const scaleData = {
                 x: designScale,
@@ -262,21 +222,10 @@ const TShirtDesigner: React.FC = () => {
                 z: 1
             };
 
-            const scaleResponse = await fetch(`${API_BASE}/scale/create`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${user.token}`
-                },
-                body: JSON.stringify(scaleData)
+            const scaleResponse = await api.post('/scale/create', scaleData, {
+                headers: { Authorization: `Bearer ${user.token}` }
             });
-
-            let scale;
-            if (scaleResponse.ok) {
-                scale = await scaleResponse.json();
-            } else {
-                scale = { id: Date.now() + 2, ...scaleData };
-            }
+            const scale = scaleResponse.data;
 
             const placementData = {
                 position: position,
@@ -284,21 +233,10 @@ const TShirtDesigner: React.FC = () => {
                 scale: scale
             };
 
-            const placementResponse = await fetch(`${API_BASE}/placement-data/create`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${user.token}`
-                },
-                body: JSON.stringify(placementData)
+            const placementResponse = await api.post('/placement-data/create', placementData, {
+                headers: { Authorization: `Bearer ${user.token}` }
             });
-
-            let placement;
-            if (placementResponse.ok) {
-                placement = await placementResponse.json();
-            } else {
-                placement = { placementDataId: Date.now() + 3, ...placementData };
-            }
+            const placement = placementResponse.data;
 
             const tshirtData = {
                 designId: design.designId,
@@ -311,13 +249,8 @@ const TShirtDesigner: React.FC = () => {
                 view: selectedView
             };
 
-            const tshirtResponse = await fetch(`${API_BASE}/tshirt/create`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${user.token}`
-                },
-                body: JSON.stringify(tshirtData)
+            await api.post('/tshirt/create', tshirtData, {
+                headers: { Authorization: `Bearer ${user.token}` }
             });
 
             showNotification('Order confirmed successfully!');
@@ -393,6 +326,7 @@ const TShirtDesigner: React.FC = () => {
             background: 'linear-gradient(135deg, #f0f9ff 0%, #ffffff 50%, #faf5ff 100%)',
             fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         }}>
+            <Header page="designer" onButtonClick={handleLogout} />
             {notification && (
                 <div style={{
                     position: 'fixed',
@@ -413,80 +347,6 @@ const TShirtDesigner: React.FC = () => {
                     <span>{notification}</span>
                 </div>
             )}
-
-            <header style={{
-                background: 'rgba(255, 255, 255, 0.9)',
-                backdropFilter: 'blur(10px)',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                borderBottom: '1px solid #f3f4f6',
-                position: 'sticky',
-                top: 0,
-                zIndex: 40
-            }}>
-                <div style={{
-                    maxWidth: '1280px',
-                    margin: '0 auto',
-                    padding: '0 1rem',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    height: '72px'
-                }}>
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem'
-                    }}>
-                        <div style={{
-                            background: 'linear-gradient(135deg, #2563eb, #9333ea)',
-                            padding: '0.5rem',
-                            borderRadius: '0.75rem'
-                        }}>
-                            <Shirt style={{ height: '2rem', width: '2rem', color: 'white' }} />
-                        </div>
-                        <span style={{
-                            fontSize: '1.875rem',
-                            fontWeight: 'bold',
-                            background: 'linear-gradient(to right, #2563eb, #9333ea)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text'
-                        }}>
-                            PrintIt101 Pro
-                        </span>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <span style={{
-                            fontSize: '1.875rem',
-                            fontWeight: 'bold',
-                            background: 'linear-gradient(to right, #2563eb, #9333ea)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text'
-                        }}>
-                            Welcome, {user.firstName} {user.lastName}!
-                        </span>
-                        <button
-                            onClick={handleLogout}
-                            style={{
-                                background: 'linear-gradient(to right, #1e90ff, #0000ff)',
-                                color: 'white',
-                                padding: '0.5rem 1.5rem',
-                                borderRadius: '0.75rem',
-                                fontSize: '0.875rem',
-                                fontWeight: '500',
-                                transition: 'all 0.2s',
-                                border: 'none',
-                                cursor: 'pointer',
-                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                            }}
-                        >
-                            Logout
-                        </button>
-                    </div>
-                </div>
-            </header>
 
             <main style={{
                 maxWidth: '1280px',
@@ -1287,183 +1147,27 @@ const TShirtDesigner: React.FC = () => {
                          }}
                     >
                         <div style={{
-                            borderRadius: '1.5rem',
+                            borderRadius: '1rem',
                             width: '5rem',
                             height: '5rem',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             margin: '0 auto 1.5rem',
-                            boxShadow: '0 10px 20px -5px rgba(124, 58, 237, 0.3)',
-                            background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-                            position: 'relative',
-                            overflow: 'hidden'
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                            background: 'linear-gradient(135deg, #ddd6fe, #c4b5fd)'
                         }}>
-                            <div style={{
-                                position: 'absolute',
-                                top: '-50%',
-                                left: '-50%',
-                                width: '200%',
-                                height: '200%',
-                                background: 'linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent)',
-                                animation: 'shimmer 2s infinite'
-                            }}></div>
-                            <ShoppingCart style={{ height: '2.5rem', width: '2.5rem', color: 'white', zIndex: 1 }} />
+                            <Shirt style={{ height: '2.5rem', width: '2.5rem', color: '#7c3aed' }} />
                         </div>
                         <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#111827', marginBottom: '1rem' }}>
-                            Fast Delivery
+                            Fully Customizable
                         </h3>
                         <p style={{ color: '#6b7280', lineHeight: '1.75' }}>
-                            Quick turnaround times with reliable shipping options and order tracking included
+                            Adjust size, position, and scale to create the perfect design for your apparel
                         </p>
                     </div>
                 </div>
-
-                {tshirts.length > 0 && (
-                    <div style={{ marginTop: '5rem' }}>
-                        <h2 style={{
-                            fontSize: '1.875rem',
-                            fontWeight: 'bold',
-                            textAlign: 'center',
-                            color: '#111827',
-                            marginBottom: '2.5rem'
-                        }}>
-                            Recent Designs
-                        </h2>
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                            gap: '2rem'
-                        }}>
-                            {tshirts.slice(0, 6).map((tshirt, index) => (
-                                <div
-                                    key={index}
-                                    style={{
-                                        textAlign: 'center',
-                                        background: 'rgba(255, 255, 255, 0.5)',
-                                        backdropFilter: 'blur(4px)',
-                                        borderRadius: '1rem',
-                                        padding: '1.5rem',
-                                        border: '1px solid #f3f4f6',
-                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                                        transition: 'transform 0.2s',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    <div style={{
-                                        width: '100%',
-                                        height: '12rem',
-                                        background: '#f3f4f6',
-                                        borderRadius: '0.75rem',
-                                        marginBottom: '1rem',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}>
-                                        <Shirt style={{ height: '4rem', width: '4rem', color: '#9ca3af' }} />
-                                    </div>
-                                    <h3 style={{
-                                        fontWeight: 'bold',
-                                        color: '#111827',
-                                        marginBottom: '0.5rem'
-                                    }}>
-                                        {tshirt.name || 'Custom T-Shirt'}
-                                    </h3>
-                                    <p style={{
-                                        color: '#6b7280',
-                                        fontSize: '0.875rem',
-                                        marginBottom: '0.75rem'
-                                    }}>
-                                        {tshirt.description || 'Custom designed t-shirt'}
-                                    </p>
-                                    <div style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center'
-                                    }}>
-                                        <span style={{ fontWeight: 'bold', color: '#2563eb' }}>
-                                            ${tshirt.price || '29.99'}
-                                        </span>
-                                        <span style={{
-                                            fontSize: '0.875rem',
-                                            color: '#9ca3af',
-                                            textTransform: 'capitalize'
-                                        }}>
-                                            {tshirt.color || 'white'} • {tshirt.size || 'M'}
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
             </main>
-
-            <footer style={{
-                background: 'linear-gradient(to right, #1f2937, #374151)',
-                color: 'white',
-                marginTop: '5rem'
-            }}>
-                <div style={{
-                    maxWidth: '1280px',
-                    margin: '0 auto',
-                    padding: '3rem 1rem'
-                }}>
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: isMedium ? '2fr 1fr 1fr' : '1fr',
-                        gap: '2rem'
-                    }}>
-                        <div>
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.75rem',
-                                marginBottom: '1rem'
-                            }}>
-                                <div style={{
-                                    background: 'linear-gradient(135deg, #2563eb, #9333ea)',
-                                    padding: '0.5rem',
-                                    borderRadius: '0.75rem'
-                                }}>
-                                    <Shirt style={{ height: '1.5rem', width: '1.5rem', color: 'white' }} />
-                                </div>
-                                <span style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>PrintIt101 Pro</span>
-                            </div>
-                            <p style={{ color: '#d1d5db', marginBottom: '1.5rem', maxWidth: '24rem' }}>
-                                Create stunning custom apparel with our professional design tools. Quality printing, fast delivery, and endless creativity.
-                            </p>
-                        </div>
-                        <div>
-                            <h4 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>Company</h4>
-                            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                <li><a href="#" style={{ color: '#d1d5db', textDecoration: 'none' }}>About Us</a></li>
-                                <li><a href="#" style={{ color: '#d1d5db', textDecoration: 'none' }}>Careers</a></li>
-                                <li><a href="#" style={{ color: '#d1d5db', textDecoration: 'none' }}>Press</a></li>
-                                <li><a href="#" style={{ color: '#d1d5db', textDecoration: 'none' }}>Blog</a></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>Support</h4>
-                            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                <li><a href="#" style={{ color: '#d1d5db', textDecoration: 'none' }}>Help Center</a></li>
-                                <li><a href="#" style={{ color: '#d1d5db', textDecoration: 'none' }}>Size Guide</a></li>
-                                <li><a href="#" style={{ color: '#d1d5db', textDecoration: 'none' }}>Shipping</a></li>
-                                <li><a href="#" style={{ color: '#d1d5db', textDecoration: 'none' }}>Returns</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div style={{
-                        borderTop: '1px solid #4b5563',
-                        marginTop: '2rem',
-                        paddingTop: '2rem',
-                        textAlign: 'center',
-                        color: '#9ca3af'
-                    }}>
-                        <p>&copy; 2025 PrintIt101 Pro. All rights reserved. Made with ❤️ for creators.</p>
-                    </div>
-                </div>
-            </footer>
         </div>
     );
 };
