@@ -29,12 +29,17 @@ function App() {
 }
 
 function Layout() {
-    const { isLoggedIn } = useAuth();
+    const { isLoggedIn, user } = useAuth();
 
     const handleAuthSuccess = (user: any) => {
         // Authentication is handled in the Login component
         // This will redirect to the main app
     };
+
+    // Ensure we wait for auth state to be properly initialized
+    if (isLoggedIn && !user) {
+        return <div>Loading...</div>;
+    }
 
     return (
         <>
