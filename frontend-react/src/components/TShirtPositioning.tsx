@@ -135,59 +135,59 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
     };
 
     const savePositioning = async (): Promise<void> => {
-    if (!backendConnected) {
-        showNotification('Cannot save: Backend is not connected.');
-        return;
-    }
+        if (!backendConnected) {
+            showNotification('Cannot save: Backend is not connected.');
+            return;
+        }
 
-    setIsSaving(true);
-    setIsLoading(true);
+        setIsSaving(true);
+        setIsLoading(true);
 
-    try {
-        console.log('Saving T-shirt placement data...');
-        console.log('Current design values:', { x: designPosition.x, y: designPosition.y, scale: designScale, rotation: designRotation });
+        try {
+            console.log('Saving T-shirt placement data...');
+            console.log('Current design values:', { x: designPosition.x, y: designPosition.y, scale: designScale, rotation: designRotation });
 
-        // Save Rotation
-        const savedRotation: Rotation = await rotationService.createRotation({ angle: designRotation });
-        console.log('Rotation saved:', savedRotation);
+            // Save Rotation
+            const savedRotation: Rotation = await rotationService.createRotation({ angle: designRotation });
+            console.log('Rotation saved:', savedRotation);
 
-        if (!savedRotation?.rotationId) throw new Error('Rotation not saved correctly');
+            if (!savedRotation?.rotationId) throw new Error('Rotation not saved correctly');
 
-        // Save Position
-        const savedPosition: Position = await positionService.createPosition({ x: designPosition.x, y: designPosition.y });
-        console.log('Position saved:', savedPosition);
-        if (!savedPosition?.positionId) throw new Error('Position not saved correctly');
+            // Save Position
+            const savedPosition: Position = await positionService.createPosition({ x: designPosition.x, y: designPosition.y });
+            console.log('Position saved:', savedPosition);
+            if (!savedPosition?.positionId) throw new Error('Position not saved correctly');
 
-        // Save Scale
-        const savedScale: Scale = await scaleService.createScale({ value: designScale });
-        console.log('Scale saved:', savedScale);
-        if (!savedScale?.scaleId) throw new Error('Scale not saved correctly');
+            // Save Scale
+            const savedScale: Scale = await scaleService.createScale({ value: designScale });
+            console.log('Scale saved:', savedScale);
+            if (!savedScale?.scaleId) throw new Error('Scale not saved correctly');
 
-        // Save PlacementData
-        const savedPlacementData: PlacementData = await placementService.createPlacementData({
-            rotation: savedRotation,
-            position: savedPosition,
-            scale: savedScale
-        });
-        console.log('PlacementData saved successfully:', savedPlacementData);
+            // Save PlacementData
+            const savedPlacementData: PlacementData = await placementService.createPlacementData({
+                rotation: savedRotation,
+                position: savedPosition,
+                scale: savedScale
+            });
+            console.log('PlacementData saved successfully:', savedPlacementData);
 
-        showNotification('Design saved successfully!');
-        onSave({
-            tshirtData,
-            position: designPosition,
-            scale: designScale,
-            rotation: designRotation
-        });
+            showNotification('Design saved successfully!');
+            onSave({
+                tshirtData,
+                position: designPosition,
+                scale: designScale,
+                rotation: designRotation
+            });
 
-    } catch (error) {
-        console.error('Error saving placement data:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        showNotification(`Failed to save design: ${errorMessage}`);
-    } finally {
-        setIsSaving(false);
-        setIsLoading(false);
-    }
-};
+        } catch (error) {
+            console.error('Error saving placement data:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            showNotification(`Failed to save design: ${errorMessage}`);
+        } finally {
+            setIsSaving(false);
+            setIsLoading(false);
+        }
+    };
 
 
     return (
@@ -201,8 +201,8 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
                     position: 'fixed',
                     top: '1.5rem',
                     right: '1.5rem',
-                    background: notification.includes('Error') || notification.includes('Warning') 
-                        ? 'linear-gradient(to right, #dc2626, #b91c1c)' 
+                    background: notification.includes('Error') || notification.includes('Warning')
+                        ? 'linear-gradient(to right, #dc2626, #b91c1c)'
                         : 'linear-gradient(to right, #2563eb, #9333ea)',
                     color: 'white',
                     padding: '1rem 1.5rem',
@@ -637,8 +637,8 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
                                     justifyContent: 'center',
                                     gap: '0.75rem',
                                     padding: '1rem 1.5rem',
-                                    background: (isSaving || !backendConnected) 
-                                        ? '#9ca3af' 
+                                    background: (isSaving || !backendConnected)
+                                        ? '#9ca3af'
                                         : 'linear-gradient(to right, #2563eb, #9333ea)',
                                     color: 'white',
                                     borderRadius: '0.75rem',
@@ -652,11 +652,11 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
                             >
                                 <Save style={{ height: '1.25rem', width: '1.25rem' }} />
                                 <span>
-                                    {!backendConnected 
-                                        ? 'Backend Disconnected' 
-                                        : isSaving 
-                                        ? 'Saving...' 
-                                        : 'Save & Finish'
+                                    {!backendConnected
+                                        ? 'Backend Disconnected'
+                                        : isSaving
+                                            ? 'Saving...'
+                                            : 'Save & Finish'
                                     }
                                 </span>
                             </button>
