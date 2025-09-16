@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, ShoppingCart, User, Shirt, AlertCircle } from 'lucide-react';
 import Auth from './Auth';
+import Header from './Header';
+import { useNavigate } from 'react-router-dom';
 
 // Import the two page components (these would be separate files in your project)
 // For this demo, I'll include simplified versions inline
@@ -10,6 +12,7 @@ const TShirtDesignerMain: React.FC = () => {
     const [user, setUser] = useState<any>(null);
     const [tshirtData, setTshirtData] = useState<any>(null);
     const [notification, setNotification] = useState<string>('');
+    const navigate = useNavigate();
 
     const API_BASE = 'http://localhost:8080';
 
@@ -88,8 +91,14 @@ const TShirtDesignerMain: React.FC = () => {
         }
     };
 
+    // Handle login success specifically for the Auth component
+    const handleLoginSuccess = (userData: any) => {
+        setUser(userData);
+        sessionStorage.setItem('currentUser', JSON.stringify(userData));
+    };
+
     if (!user) {
-        return <Auth onAuthSuccess={handleAuthSuccess} />;
+        return <Auth onAuthSuccess={handleLoginSuccess} />;
     }
 
     const handleContinueToPositioning = (data: any) => {
@@ -826,106 +835,29 @@ const TShirtDesignerMain: React.FC = () => {
             background: 'linear-gradient(135deg, #f0f9ff 0%, #ffffff 50%, #faf5ff 100%)',
             fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         }}>
-            {notification && (
-                <div style={{
-                    position: 'fixed',
-                    top: '1.5rem',
-                    right: '1.5rem',
-                    background: 'linear-gradient(to right, #2563eb, #9333ea)',
-                    color: 'white',
-                    padding: '1rem 1.5rem',
-                    borderRadius: '0.75rem',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                    zIndex: 50,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    fontWeight: '500'
-                }}>
-                    <AlertCircle style={{ height: '1.25rem', width: '1.25rem' }} />
-                    <span>{notification}</span>
-                </div>
-            )}
-
-            <header style={{
-                background: 'rgba(255, 255, 255, 0.9)',
-                backdropFilter: 'blur(10px)',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                borderBottom: '1px solid #f3f4f6',
-                position: 'sticky',
-                top: 0,
-                zIndex: 40
-            }}>
-                <div style={{
-                    maxWidth: '1280px',
-                    margin: '0 auto',
-                    padding: '0 1rem',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    height: '72px'
-                }}>
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem'
-                    }}>
-                        <div style={{
-                            background: 'linear-gradient(135deg, #2563eb, #9333ea)',
-                            padding: '0.5rem',
-                            borderRadius: '0.75rem'
-                        }}>
-                            <Shirt style={{ height: '2rem', width: '2rem', color: 'white' }} />
-                        </div>
-                        <span style={{
-                            fontSize: '1.875rem',
-                            fontWeight: 'bold',
-                            background: 'linear-gradient(to right, #2563eb, #9333ea)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text'
-                        }}>
-                            {currentStep === 'upload' ? 'Design Your T-Shirt' : 'Position Your Design'}
-                        </span>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <span style={{ fontSize: '1rem', color: '#6b7280' }}>
-                            Welcome, {user.firstName} {user.lastName}!
-                        </span>
-                        <button
-                            onClick={handleLogout}
-                            style={{
-                                background: 'linear-gradient(to right, #dc2626, #b91c1c)',
-                                color: 'white',
-                                padding: '0.5rem 1.5rem',
-                                borderRadius: '0.75rem',
-                                fontSize: '0.875rem',
-                                fontWeight: '500',
-                                transition: 'all 0.2s',
-                                border: 'none',
-                                cursor: 'pointer',
-                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                            }}
-                        >
-                            Logout
-                        </button>
-                    </div>
-                </div>
-            </header>
-
-            <main>
-                {currentStep === 'upload' ? (
-                    <TShirtUpload onContinue={handleContinueToPositioning} />
-                ) : (
-                    <TShirtPositioning
-                        tshirtData={tshirtData}
-                        onSave={handleSaveDesign}
-                        onBack={handleBackToUpload}
-                        user={user}
+            {!user ? (
+                <Auth onAuthSuccess={handleLoginSuccess} />
+            ) : (
+                <>
+                    <Header
+                        page="designer"
+                        onButtonClick={() => navigate('/')}
+                        onProfileClick={() => navigate('/profile')}
                     />
-                )}
-            </main>
+                    <main>
+                        {currentStep === 'upload' ? (
+                            <TShirtUpload onContinue={handleContinueToPositioning} />
+                        ) : (
+                            <TShirtPositioning
+                                tshirtData={tshirtData}
+                                onSave={handleSaveDesign}
+                                onBack={handleBackToUpload}
+                                user={user}
+                            />
+                        )}
+                    </main>
+                </>
+            )}
         </div>
     );
 };

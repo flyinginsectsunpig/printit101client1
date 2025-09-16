@@ -12,7 +12,7 @@ interface LoginProps {
 
 
 const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister }) => {
-    const { login } = useAuth();
+    const { login, setUser } = useAuth();
     const [formData, setFormData] = useState({
         userName: '',
         password: ''
@@ -35,6 +35,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister }) => 
         try {
             const response = await api.post('/auth/login', formData);
             login();
+            setUser(response.data);
             onLoginSuccess(response.data);
         } catch (error: any) {
             setError(error.response?.data?.message || 'Login failed');
