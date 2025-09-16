@@ -10,7 +10,7 @@ export interface CartItem {
 interface CartContextType {
     cart: CartItem[];
     items: CartItem[]; // alias for cart
-    total: number; // computed total price
+    total: number; // total price in Rands
     addToCart: (item: CartItem) => void;
     removeFromCart: (id: number) => void;
     clearCart: () => void;
@@ -41,9 +41,9 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setCart([]);
     };
 
-    // 👇 computed total
+    // calculate total in Rands
     const total = cart.reduce(
-        (sum: number, item: CartItem) => sum + item.price * item.quantity,
+        (sum, item) => sum + item.price * item.quantity,
         0
     );
 

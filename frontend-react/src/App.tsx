@@ -4,10 +4,12 @@ import TestApi from "./views/TestApi";
 import CustomerTestApi from "./views/CustomerTestApi";
 import CustomerDemo from "./components/CustomerDemo";
 import TShirtDesignerMain from "./components/TShirtDesignerMain"; // Updated import
+import Profile from "./components/Profile";
 import ScaleTestApi from "./views/ScaleTestApi";
 import PositionTestApi from "./views/PositionTestApi";
 import RotationTestApi from "./views/RotationTestApi";
 import PlacementDataTestApi from "./views/PlacementDataTestApi";
+import Auth from "./components/Auth";
 
 import { Cart } from "./components/Cart";
 import { Checkout } from "./components/Checkout";
@@ -29,27 +31,38 @@ function App() {
 function Layout() {
     const { isLoggedIn } = useAuth();
 
+    const handleAuthSuccess = (user: any) => {
+        // Authentication is handled in the Login component
+        // This will redirect to the main app
+    };
+
     return (
         <>
             {/* Cart only shows after login */}
             {isLoggedIn && <Cart />}
 
             <Routes>
-                {/* login page should set isLoggedIn */}
-                <Route path="/login" element={<div>Login Page</div>} />
-
-                <Route path="/test-api" element={<TestApi />} />
-                <Route path="/customer-test-api" element={<CustomerTestApi />} />
-                <Route path="/customer-demo" element={<CustomerDemo />} />
-                <Route path="/tshirt-designer" element={<TShirtDesignerMain />} /> {/* Updated component */}
-
-                <Route path="/placement-test-api" element={<PlacementDataTestApi />} />
-                <Route path="/scale-test-api" element={<ScaleTestApi />} />
-                <Route path="/position-test-api" element={<PositionTestApi />} />
-                <Route path="/rotation-test-api" element={<RotationTestApi />} />
-                {/* Add a default route to the t-shirt designer */}
-                <Route path="/" element={<TShirtDesignerMain />} />
-                <Route path="/checkout" element={<Checkout />} />
+                {/* Show auth page if not logged in */}
+                {!isLoggedIn ? (
+                    <>
+                        <Route path="/*" element={<Auth onAuthSuccess={handleAuthSuccess} />} />
+                    </>
+                ) : (
+                    <>
+                        <Route path="/test-api" element={<TestApi />} />
+                        <Route path="/customer-test-api" element={<CustomerTestApi />} />
+                        <Route path="/customer-demo" element={<CustomerDemo />} />
+                        <Route path="/tshirt-designer" element={<TShirtDesignerMain />} />
+                        <Route path="/profile" element={<Profile />} />
+                        <Route path="/placement-test-api" element={<PlacementDataTestApi />} />
+                        <Route path="/scale-test-api" element={<ScaleTestApi />} />
+                        <Route path="/position-test-api" element={<PositionTestApi />} />
+                        <Route path="/rotation-test-api" element={<RotationTestApi />} />
+                        <Route path="/checkout" element={<Checkout />} />
+                        {/* Default route to the t-shirt designer */}
+                        <Route path="/" element={<TShirtDesignerMain />} />
+                    </>
+                )}
             </Routes>
         </>
     );
