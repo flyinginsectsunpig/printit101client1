@@ -17,6 +17,7 @@ interface TShirtUploadProps {
         name: string;
         description: string;
         quantity: number;
+        price: number;
     }) => void;
 }
 
@@ -28,6 +29,7 @@ const TShirtUpload: React.FC<TShirtUploadProps> = ({ onContinue }) => {
     const [name, setName] = useState<string>('');
     const [description, setDescription] = useState<string>('');
     const [quantity, setQuantity] = useState<number>(1);
+    const [price, setPrice] = useState<number>(0); // Added price state
     const [notification, setNotification] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -84,27 +86,46 @@ const TShirtUpload: React.FC<TShirtUploadProps> = ({ onContinue }) => {
     };
 
     const handleContinue = (): void => {
-        if (!uploadedImage) {
-            showNotification('Please upload a design first');
-            return;
-        }
-        if (!name.trim()) {
-            showNotification('Please enter a product name');
-            return;
-        }
-        if (quantity < 1) {
-            showNotification('Quantity must be at least 1');
+        if (!selectedColor) {
+            showNotification('Please select a color');
             return;
         }
 
+        if (!selectedSize) {
+            showNotification('Please select a size');
+            return;
+        }
+
+        if (!name.trim()) {
+            showNotification('Please enter a name for your t-shirt');
+            return;
+        }
+
+        if (quantity < 1) {
+            showNotification('Please enter a valid quantity');
+            return;
+        }
+
+        if (!uploadedImage) {
+            showNotification('Please upload an image');
+            return;
+        }
+
+        if (price < 0) {
+            showNotification('Please enter a valid price');
+            return;
+        }
+
+        // Pass all the data to the next step
         onContinue({
-            uploadedImage,
-            uploadedFileName,
-            selectedColor,
-            selectedSize,
+            uploadedImage: uploadedImage,
+            uploadedFileName: uploadedFileName,
+            selectedColor: selectedColor,
+            selectedSize: selectedSize,
             name: name.trim(),
             description: description.trim(),
-            quantity
+            quantity: quantity,
+            price: price
         });
     };
 
@@ -304,6 +325,33 @@ const TShirtUpload: React.FC<TShirtUploadProps> = ({ onContinue }) => {
                                 />
                             </div>
 
+                            <div style={{ marginBottom: '1rem' }}>
+                                <label style={{
+                                    fontSize: '0.875rem',
+                                    fontWeight: '600',
+                                    color: '#374151',
+                                    marginBottom: '0.5rem',
+                                    display: 'block'
+                                }}>
+                                    Price *
+                                </label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={price}
+                                    onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
+                                    placeholder="Enter product price"
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.75rem',
+                                        border: '1px solid #d1d5db',
+                                        borderRadius: '0.5rem',
+                                        fontSize: '1rem',
+                                        boxSizing: 'border-box'
+                                    }}
+                                />
+                            </div>
+
                             <div>
                                 <label style={{
                                     fontSize: '0.875rem',
@@ -424,7 +472,7 @@ const TShirtUpload: React.FC<TShirtUploadProps> = ({ onContinue }) => {
                         {/* Continue Button */}
                         <button
                             onClick={handleContinue}
-                            disabled={!uploadedImage || !name.trim()}
+                            disabled={!uploadedImage || !name.trim() || quantity < 1 || price < 0}
                             style={{
                                 width: '100%',
                                 display: 'flex',
@@ -432,13 +480,13 @@ const TShirtUpload: React.FC<TShirtUploadProps> = ({ onContinue }) => {
                                 justifyContent: 'center',
                                 gap: '0.75rem',
                                 padding: '1rem 2rem',
-                                background: (!uploadedImage || !name.trim()) ? '#9ca3af' : 'linear-gradient(to right, #2563eb, #9333ea)',
+                                background: (!uploadedImage || !name.trim() || quantity < 1 || price < 0) ? '#9ca3af' : 'linear-gradient(to right, #2563eb, #9333ea)',
                                 color: 'white',
                                 borderRadius: '0.75rem',
                                 border: 'none',
                                 fontWeight: '600',
                                 fontSize: '1.125rem',
-                                cursor: (!uploadedImage || !name.trim()) ? 'not-allowed' : 'pointer',
+                                cursor: (!uploadedImage || !name.trim() || quantity < 1 || price < 0) ? 'not-allowed' : 'pointer',
                                 transition: 'all 0.2s',
                                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                             }}
@@ -595,6 +643,12 @@ const TShirtUpload: React.FC<TShirtUploadProps> = ({ onContinue }) => {
                                     <span style={{ color: '#6b7280', fontWeight: '500' }}>Size:</span>
                                     <p style={{ fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
                                         {selectedSize}
+                                    </p>
+                                </div>
+                                <div>
+                                    <span style={{ color: '#6b7280', fontWeight: '500' }}>Price:</span>
+                                    <p style={{ fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
+                                        ${price.toFixed(2)}
                                     </p>
                                 </div>
                             </div>
