@@ -250,7 +250,7 @@ const TShirtUpload: React.FC<TShirtUploadProps> = ({ onContinue }) => {
                                 color: '#111827',
                                 marginBottom: '1.5rem'
                             }}>Product Details</h3>
-                            
+
                             <div style={{ marginBottom: '1rem' }}>
                                 <label style={{
                                     fontSize: '0.875rem',
