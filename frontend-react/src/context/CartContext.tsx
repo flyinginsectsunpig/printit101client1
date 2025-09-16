@@ -1,10 +1,14 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
 export interface CartItem {
-    id: number;
+    id?: string; // uuid, optional
+    productId: number;
     name: string;
     price: number;
     quantity: number;
+    size?: string;
+    color?: string;
+    image?: string;
 }
 
 interface CartContextType {
@@ -12,7 +16,8 @@ interface CartContextType {
     items: CartItem[]; // alias for cart
     total: number; // total price in Rands
     addToCart: (item: CartItem) => void;
-    removeFromCart: (id: number) => void;
+    removeFromCart: (productId: number) => void;
+    updateQuantity: (productId: number, quantity: number) => void;
     clearCart: () => void;
 }
 
@@ -23,18 +28,40 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const addToCart = (item: CartItem) => {
         setCart((prev) => {
-            const existing = prev.find((i) => i.id === item.id);
+            const existing = prev.find((i) => i.productId === item.productId);
             if (existing) {
                 return prev.map((i) =>
-                    i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i
+                    i.productId === item.productId ? {
+                        ...i,
+                        quantity: (i.quantity || 1) + (item.quantity || 1)
+                    } : i
                 );
             }
-            return [...prev, item];
+            return [...prev, {
+                ...item,
+                id: item.id || `${item.productId}-${Date.now()}`,
+                quantity: item.quantity || 1,
+                price: item.price || 0
+            }];
         });
     };
 
-    const removeFromCart = (id: number) => {
-        setCart((prev) => prev.filter((i) => i.id !== id));
+    const removeFromCart = (productId: number) => {
+        setCart((prev) => prev.filter((i) => i.productId !== productId));
+    };
+
+    const updateQuantity = (productId: number, quantity: number) => {
+        if (quantity <= 0) {
+            removeFromCart(productId);
+            return;
+        }
+        setCart((prev) =>
+            prev.map((item) =>
+                item.productId === productId
+                    ? { ...item, quantity: quantity }
+                    : item
+            )
+        );
     };
 
     const clearCart = () => {
@@ -43,13 +70,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // calculate total in Rands
     const total = cart.reduce(
-        (sum, item) => sum + item.price * item.quantity,
+        (sum, item) => sum + (item.price || 0) * (item.quantity || 1),
         0
     );
 
     return (
         <CartContext.Provider
-            value={{ cart, items: cart, total, addToCart, removeFromCart, clearCart }}
+            value={{ cart, items: cart, total, addToCart, removeFromCart, updateQuantity, clearCart }}
         >
             {children}
         </CartContext.Provider>
