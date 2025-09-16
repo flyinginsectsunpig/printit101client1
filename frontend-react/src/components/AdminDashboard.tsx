@@ -233,7 +233,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                                     </td>
                                     <td style={{ padding: '1rem' }}>{customer.userName}</td>
                                     <td style={{ padding: '1rem' }}>{customer.contact.email}</td>
-                                    <td style={{ padding: '1rem' }}>{customer.contact.phone}</td>
+                                    <td style={{ padding: '1rem' }}>{customer.contact.phoneNumber}</td>
                                     <td style={{ padding: '1rem' }}>
                                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                                             <button
@@ -346,12 +346,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                                         />
                                     </div>
                                     <div className="form-group">
-                                        <label htmlFor="contact.phone">Phone:</label>
+                                        <label htmlFor="contact.phoneNumber">Phone:</label>
                                         <input
                                             type="tel"
-                                            id="contact.phone"
-                                            name="contact.phone"
-                                            value={selectedCustomer.contact.phone}
+                                            id="contact.phoneNumber"
+                                            name="contact.phoneNumber"
+                                            value={selectedCustomer.contact.phoneNumber}
                                             onChange={handleInputChange}
                                             required
                                         />
