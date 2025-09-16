@@ -1,6 +1,8 @@
+// src/components/Register.tsx
 import React, { useState } from 'react';
 import api from '../service/api';
 import Header from './Header';
+import { useAuth } from '../context/AuthContext';
 
 interface RegisterProps {
     onRegisterSuccess: (user: any) => void;
@@ -8,82 +10,147 @@ interface RegisterProps {
 }
 
 const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin }) => {
+    const { login } = useAuth();
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
         userName: '',
         password: '',
-        contact: {
-            email: '',
-            phone: ''
-        },
-        address: {
-            buildingName: '',
-            unitNumber: 0,
-            propertyNumber: 0,
-            poBoxNumber: 0,
-            street: '',
-            municipality: '',
-            province: '',
-            postalCode: '',
-            country: ''
-        }
+        confirmPassword: '',
+        email: '',
+        phone: '',
+        propertyNumber: '',
+        buildingName: '',
+        unitNumber: '',
+        poBoxNumber: '',
+        street: '',
+        municipality: '',
+        province: '',
+        postalCode: '',
+        country: 'South Africa'
     });
+
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value, type } = e.target;
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
 
-        if (name.includes('.')) {
-            const [parent, child] = name.split('.');
-            setFormData({
-                ...formData,
-                [parent]: {
-                    ...formData[parent as keyof typeof formData] as any,
-                    [child]: type === 'number' ? parseInt(value) || 0 : value
-                }
-            });
-        } else {
-            setFormData({
-                ...formData,
-                [name]: type === 'number' ? parseInt(value) || 0 : value
-            });
+    const validateForm = (): boolean => {
+        if (formData.password !== formData.confirmPassword) {
+            setError('Passwords do not match');
+            return false;
         }
+
+        if (formData.password.length < 6) {
+            setError('Password must be at least 6 characters long');
+            return false;
+        }
+
+        // Required fields validation
+        const requiredFields = ['firstName', 'lastName', 'userName', 'email', 'phone', 'street', 'municipality', 'province', 'postalCode'];
+        for (const field of requiredFields) {
+            if (!formData[field as keyof typeof formData].toString().trim()) {
+                setError(`Please fill in all required fields`);
+                return false;
+            }
+        }
+
+        return true;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
         setError('');
 
-        console.log('Form data being sent:', JSON.stringify(formData, null, 2));
-        console.log('propertyNumber type:', typeof formData.address.propertyNumber, 'value:', formData.address.propertyNumber);
-        console.log('poBoxNumber type:', typeof formData.address.poBoxNumber, 'value:', formData.address.poBoxNumber);
+        if (!validateForm()) {
+            return;
+        }
+
+        setLoading(true);
 
         try {
-            const response = await api.post('/auth/register', formData);
+            const registerData = {
+                firstName: formData.firstName.trim(),
+                lastName: formData.lastName.trim(),
+                userName: formData.userName.trim(),
+                password: formData.password,
+                contact: {
+                    email: formData.email.trim(),
+                    phone: formData.phone.trim()
+                },
+                address: {
+                    propertyNumber: parseInt(formData.propertyNumber) || 0,
+                    buildingName: formData.buildingName.trim(),
+                    unitNumber: parseInt(formData.unitNumber) || 0,
+                    poBoxNumber: parseInt(formData.poBoxNumber) || 0,
+                    street: formData.street.trim(),
+                    municipality: formData.municipality.trim(),
+                    province: formData.province.trim(),
+                    postalCode: formData.postalCode.trim(),
+                    country: formData.country.trim()
+                }
+            };
+
+            console.log('Sending registration data:', registerData);
+
+            const response = await api.post('/auth/register', registerData);
+            console.log('Registration successful:', response.data);
+
+            // Update auth context
+            login(response.data);
+
+            // Call the callback
             onRegisterSuccess(response.data);
         } catch (error: any) {
-            setError(error.response?.data?.message || 'Registration failed');
+            console.error('Registration error:', error);
+            setError(error.response?.data?.message || 'Registration failed. Please try again.');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="auth-wrapper" style={{ minHeight: '100vh', width: '100%', background: 'linear-gradient(135deg, #f0f9ff 0%, #ffffff 50%, #faf5ff 100%)', fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', display: 'flex', flexDirection: 'column' }}>
+        <div className="auth-wrapper" style={{
+            minHeight: '100vh',
+            width: '100%',
+            background: 'linear-gradient(135deg, #f0f9ff 0%, #ffffff 50%, #faf5ff 100%)',
+            fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+        }}>
             <Header page="register" onButtonClick={onSwitchToLogin} />
-            <div className="auth-container" style={{ maxWidth: '1280px', margin: '0 auto', padding: '2.5rem 1rem', flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                <div className="auth-form" style={{ width: '100%', maxWidth: '800px' }}>
-                    {/*<h2>Register</h2>*/}
+            <div className="auth-container" style={{
+                maxWidth: '1280px',
+                margin: '0 auto',
+                padding: '2.5rem 1rem',
+                flex: 1,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'flex-start',
+                overflow: 'auto'
+            }}>
+                <div className="auth-form" style={{
+                    width: '100%',
+                    maxWidth: '600px',
+                    maxHeight: 'calc(100vh - 72px)',
+                    overflowY: 'auto'
+                }}>
                     {error && <div className="error-message">{error}</div>}
+
                     <form onSubmit={handleSubmit}>
-                        <div className="section" style={{ marginBottom: '2rem' }}>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#111827', marginBottom: '1rem' }}>Personal Information</h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        {/* Personal Information */}
+                        <div className="form-section">
+                            <h3>Personal Information</h3>
+                            <div className="form-row">
                                 <div className="form-group">
-                                    <label htmlFor="firstName">First Name:</label>
+                                    <label htmlFor="firstName">First Name *:</label>
                                     <input
                                         type="text"
                                         id="firstName"
@@ -94,7 +161,7 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="lastName">Last Name:</label>
+                                    <label htmlFor="lastName">Last Name *:</label>
                                     <input
                                         type="text"
                                         id="lastName"
@@ -104,19 +171,26 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
                                         required
                                     />
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Account Information */}
+                        <div className="form-section">
+                            <h3>Account Information</h3>
+                            <div className="form-group">
+                                <label htmlFor="userName">Username *:</label>
+                                <input
+                                    type="text"
+                                    id="userName"
+                                    name="userName"
+                                    value={formData.userName}
+                                    onChange={handleChange}
+                                    required
+                                />
+                            </div>
+                            <div className="form-row">
                                 <div className="form-group">
-                                    <label htmlFor="userName">Username:</label>
-                                    <input
-                                        type="text"
-                                        id="userName"
-                                        name="userName"
-                                        value={formData.userName}
-                                        onChange={handleChange}
-                                        required
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="password">Password:</label>
+                                    <label htmlFor="password">Password *:</label>
                                     <input
                                         type="password"
                                         id="password"
@@ -124,32 +198,45 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
                                         value={formData.password}
                                         onChange={handleChange}
                                         required
+                                        minLength={6}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="confirmPassword">Confirm Password *:</label>
+                                    <input
+                                        type="password"
+                                        id="confirmPassword"
+                                        name="confirmPassword"
+                                        value={formData.confirmPassword}
+                                        onChange={handleChange}
+                                        required
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        <div className="section" style={{ marginBottom: '2rem' }}>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#111827', marginBottom: '1rem' }}>Contact</h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        {/* Contact Information */}
+                        <div className="form-section">
+                            <h3>Contact Information</h3>
+                            <div className="form-row">
                                 <div className="form-group">
-                                    <label htmlFor="contact.email">Email:</label>
+                                    <label htmlFor="email">Email *:</label>
                                     <input
                                         type="email"
-                                        id="contact.email"
-                                        name="contact.email"
-                                        value={formData.contact.email}
+                                        id="email"
+                                        name="email"
+                                        value={formData.email}
                                         onChange={handleChange}
                                         required
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="contact.phone">Phone:</label>
+                                    <label htmlFor="phone">Phone *:</label>
                                     <input
                                         type="tel"
-                                        id="contact.phone"
-                                        name="contact.phone"
-                                        value={formData.contact.phone}
+                                        id="phone"
+                                        name="phone"
+                                        value={formData.phone}
                                         onChange={handleChange}
                                         required
                                     />
@@ -157,117 +244,75 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
                             </div>
                         </div>
 
-                        <div className="section">
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#111827', marginBottom: '1rem' }}>Residential Address</h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        {/* Address Information */}
+                        <div className="form-section">
+                            <h3>Address Information</h3>
+                            <div className="form-group">
+                                <label htmlFor="street">Street *:</label>
+                                <input
+                                    type="text"
+                                    id="street"
+                                    name="street"
+                                    value={formData.street}
+                                    onChange={handleChange}
+                                    required
+                                />
+                            </div>
+                            <div className="form-row">
                                 <div className="form-group">
-                                    <label htmlFor="address.buildingName">Building Name:</label>
+                                    <label htmlFor="municipality">Municipality *:</label>
                                     <input
                                         type="text"
-                                        id="address.buildingName"
-                                        name="address.buildingName"
-                                        value={formData.address.buildingName}
+                                        id="municipality"
+                                        name="municipality"
+                                        value={formData.municipality}
                                         onChange={handleChange}
                                         required
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="address.unitNumber">Unit Number:</label>
-                                    <input
-                                        type="number"
-                                        id="address.unitNumber"
-                                        name="address.unitNumber"
-                                        value={formData.address.unitNumber}
-                                        onChange={handleChange}
-                                        required
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="address.propertyNumber">Property Number:</label>
-                                    <input
-                                        type="number"
-                                        id="address.propertyNumber"
-                                        name="address.propertyNumber"
-                                        value={formData.address.propertyNumber}
-                                        onChange={handleChange}
-                                        required
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="address.poBoxNumber">PO Box Number:</label>
-                                    <input
-                                        type="number"
-                                        id="address.poBoxNumber"
-                                        name="address.poBoxNumber"
-                                        value={formData.address.poBoxNumber}
-                                        onChange={handleChange}
-                                        required
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="address.street">Street:</label>
+                                    <label htmlFor="province">Province *:</label>
                                     <input
                                         type="text"
-                                        id="address.street"
-                                        name="address.street"
-                                        value={formData.address.street}
+                                        id="province"
+                                        name="province"
+                                        value={formData.province}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label htmlFor="postalCode">Postal Code *:</label>
+                                    <input
+                                        type="text"
+                                        id="postalCode"
+                                        name="postalCode"
+                                        value={formData.postalCode}
                                         onChange={handleChange}
                                         required
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="address.municipality">Municipality:</label>
+                                    <label htmlFor="country">Country *:</label>
                                     <input
                                         type="text"
-                                        id="address.municipality"
-                                        name="address.municipality"
-                                        value={formData.address.municipality}
+                                        id="country"
+                                        name="country"
+                                        value={formData.country}
                                         onChange={handleChange}
                                         required
                                     />
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="address.province">Province:</label>
-                                    <input
-                                        type="text"
-                                        id="address.province"
-                                        name="address.province"
-                                        value={formData.address.province}
-                                        onChange={handleChange}
-                                        required
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="address.postalCode">Postal Code:</label>
-                                    <input
-                                        type="text"
-                                        id="address.postalCode"
-                                        name="address.postalCode"
-                                        value={formData.address.postalCode}
-                                        onChange={handleChange}
-                                        required
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="address.country">Country:</label>
-                                    <input
-                                        type="text"
-                                        id="address.country"
-                                        name="address.country"
-                                        value={formData.address.country}
-                                        onChange={handleChange}
-                                        required
-                                    />
-                                </div>
-                                <div className="form-group" style={{ gridColumn: '1 / 3' }}>
-                                    <label>&nbsp;</label>
-                                    <button type="submit" disabled={loading}>
-                                        {loading ? 'Registering...' : 'Register'}
-                                    </button>
                                 </div>
                             </div>
                         </div>
+
+                        <button type="submit" disabled={loading}>
+                            {loading ? 'Creating Account...' : 'Register'}
+                        </button>
                     </form>
+
                     <p>
                         Already have an account?{' '}
                         <button type="button" className="link-button" onClick={onSwitchToLogin}>
