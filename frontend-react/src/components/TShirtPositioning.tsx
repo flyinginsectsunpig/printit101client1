@@ -8,6 +8,7 @@ import { PlacementData } from "../domain/PlacementData";
 import { Scale } from "../domain/Scale";
 import { Position } from "../domain/Position";
 import { Rotation } from "../domain/Rotation";
+import * as tshirtService from "../service/TShirtService"; // Import TShirtService
 
 interface DesignPosition {
     x: number;
@@ -20,20 +21,29 @@ interface Color {
     hex: string;
 }
 
+// Updated TShirtData interface to include optional color and size properties
 interface TShirtData {
     uploadedImage: string;
     uploadedFileName: string;
-    selectedColor: string;
-    selectedSize: string;
+    color?: string;
+    size?: string;
     name: string;
     description: string;
     quantity: number;
+    price: number;
 }
 
 interface TShirtPositioningProps {
     tshirtData: TShirtData;
     onSave: (data: {
-        tshirtData: TShirtData;
+        name: string;
+        description: string;
+        color: string;
+        size: string;
+        price: number;
+        quantity: number;
+        uploadedImage: string;
+        uploadedFileName: string;
         position: DesignPosition;
         scale: number;
         rotation: number;
@@ -51,6 +61,14 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
     const [isSaving, setIsSaving] = useState<boolean>(false);
     const [backendConnected, setBackendConnected] = useState<boolean>(false);
 
+    // State for T-shirt details, initializing with tshirtData properties
+    const [name, setName] = useState<string>(tshirtData?.name || '');
+    const [description, setDescription] = useState<string>(tshirtData?.description || '');
+    const [selectedSize, setSelectedSize] = useState<string>(tshirtData?.size || ''); // Use size from tshirtData
+    const [selectedColor, setSelectedColorState] = useState<string>(tshirtData?.color || ''); // Use color from tshirtData
+    const [price, setPrice] = useState<number>(tshirtData?.price || 29.99);
+    const [quantity, setQuantity] = useState<number>(tshirtData?.quantity || 1); // Initialize quantity
+
     const colors: Color[] = [
         { name: 'White', value: 'white', hex: '#ffffff' },
         { name: 'Black', value: 'black', hex: '#000000' },
@@ -66,7 +84,7 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
     useEffect(() => {
         const testBackendConnection = async () => {
             try {
-                await positionService.getAllPositions();
+                await positionService.getAllPositions(); // Use any service to test connection
                 setBackendConnected(true);
                 console.log('Backend connection successful');
             } catch (error) {
@@ -79,14 +97,36 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
         testBackendConnection();
     }, []);
 
+    // Update state when tshirtData changes
+    useEffect(() => {
+        if (tshirtData) {
+            setName(tshirtData.name || '');
+            setDescription(tshirtData.description || '');
+            setSelectedSize(tshirtData.size || '');
+            setSelectedColorState(tshirtData.color || '');
+            setPrice(tshirtData.price || 29.99);
+            setQuantity(tshirtData.quantity || 1);
+        }
+    }, [tshirtData]);
+
     const showNotification = (message: string): void => {
         setNotification(message);
-        setTimeout(() => setNotification(''), 5000); // Increased timeout for backend warning
+        setTimeout(() => setNotification(''), 5000);
     };
 
-    const getCurrentColorHex = (): string => {
-        const color = colors.find(c => c.value === tshirtData.selectedColor);
-        return color ? color.hex : '#ffffff';
+    // Updated to use the selectedColor state
+    const getTShirtColor = (): string => {
+        const colorMap: { [key: string]: string } = {
+            'white': '#ffffff',
+            'black': '#000000',
+            'navy': '#1e40af',
+            'red': '#dc2626',
+            'green': '#16a34a',
+            'purple': '#9333ea',
+            'orange': '#ea580c',
+            'pink': '#ec4899'
+        };
+        return colorMap[selectedColor] || '#ffffff';
     };
 
     const adjustDesignPosition = (direction: string): void => {
@@ -173,7 +213,14 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
 
             showNotification('Design saved successfully!');
             onSave({
-                tshirtData,
+                name: name.trim(),
+                description: description.trim(),
+                color: selectedColor, // Use selectedColor state
+                size: selectedSize,
+                price: Number(price),
+                quantity: Number(quantity),
+                uploadedImage: tshirtData.uploadedImage,
+                uploadedFileName: tshirtData.uploadedFileName,
                 position: designPosition,
                 scale: designScale,
                 rotation: designRotation
@@ -189,6 +236,41 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
         }
     };
 
+    const handleSave = () => {
+        if (!name.trim()) {
+            alert('Please enter a name for your t-shirt');
+            return;
+        }
+
+        if (!selectedSize) { // Use the state variable for size
+            alert('Please select a size');
+            return;
+        }
+
+        if (!selectedColor) { // Use the state variable for color
+            alert('Please select a color');
+            return;
+        }
+
+        if (quantity < 1) {
+            alert('Please enter a valid quantity');
+            return;
+        }
+
+        onSave({
+            name: name.trim(),
+            description: description.trim(),
+            color: selectedColor, // Use selectedColor state
+            size: selectedSize,
+            price: Number(price),
+            quantity: Number(quantity),
+            uploadedImage: tshirtData.uploadedImage,
+            uploadedFileName: tshirtData.uploadedFileName,
+            position: designPosition,
+            scale: designScale,
+            rotation: designRotation
+        });
+    };
 
     return (
         <div style={{
@@ -334,21 +416,47 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
                                 borderRadius: '0.5rem',
                                 border: '1px solid #e5e7eb'
                             }}>
+                                <div style={{ marginBottom: '20px' }}>
+                                    <label style={{
+                                        display: 'block',
+                                        marginBottom: '8px',
+                                        fontSize: '16px',
+                                        fontWeight: '500',
+                                        color: '#374151'
+                                    }}>
+                                        Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        style={{
+                                            width: '100%',
+                                            padding: '12px',
+                                            border: '2px solid #e5e7eb',
+                                            borderRadius: '8px',
+                                            fontSize: '16px',
+                                            outline: 'none',
+                                            transition: 'border-color 0.2s',
+                                        }}
+                                        onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                                        onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                                        required
+                                    />
+                                </div>
+
                                 <p style={{ margin: '0 0 0.5rem 0' }}>
-                                    <strong>Name:</strong> {tshirtData.name}
+                                    <strong>Color:</strong> <span style={{ textTransform: 'capitalize' }}>{selectedColor}</span>
                                 </p>
                                 <p style={{ margin: '0 0 0.5rem 0' }}>
-                                    <strong>Color:</strong> <span style={{ textTransform: 'capitalize' }}>{tshirtData.selectedColor}</span>
-                                </p>
-                                <p style={{ margin: '0 0 0.5rem 0' }}>
-                                    <strong>Size:</strong> {tshirtData.selectedSize}
+                                    <strong>Size:</strong> {selectedSize}
                                 </p>
                                 <p style={{ margin: 0 }}>
-                                    <strong>Quantity:</strong> {tshirtData.quantity}
+                                    <strong>Quantity:</strong> {quantity}
                                 </p>
-                                {tshirtData.description && (
+                                {description && (
                                     <p style={{ margin: '0.5rem 0 0 0' }}>
-                                        <strong>Description:</strong> {tshirtData.description}
+                                        <strong>Description:</strong> {description}
                                     </p>
                                 )}
                             </div>
@@ -628,7 +736,7 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
                                 <span>Back</span>
                             </button>
                             <button
-                                onClick={savePositioning}
+                                onClick={handleSave} // Call handleSave for saving positioning data
                                 disabled={isSaving || !backendConnected}
                                 style={{
                                     flex: '1',
@@ -656,7 +764,7 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
                                         ? 'Backend Disconnected'
                                         : isSaving
                                             ? 'Saving...'
-                                            : 'Save & Finish'
+                                            : 'Save & Add to Cart'
                                     }
                                 </span>
                             </button>
@@ -701,36 +809,38 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
                                     inset: '0',
                                     opacity: 0.95,
                                     clipPath: 'polygon(25% 20%, 25% 18%, 22% 15%, 28% 12%, 35% 10%, 40% 8%, 45% 8%, 55% 8%, 60% 8%, 65% 10%, 72% 12%, 78% 15%, 75% 18%, 75% 20%, 80% 25%, 80% 35%, 78% 33%, 78% 92%, 76% 96%, 24% 96%, 22% 92%, 22% 33%, 20% 35%, 20% 25%)',
-                                    backgroundColor: getCurrentColorHex()
+                                    backgroundColor: getTShirtColor() // Use the function to get current color
                                 }} />
 
                                 {/* Design Image */}
-                                <div style={{
-                                    position: 'absolute',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    transition: 'all 0.3s',
-                                    zIndex: 10,
-                                    width: '140px',
-                                    height: '140px',
-                                    left: `${50 + designPosition.x/6}%`,
-                                    top: `${40 + designPosition.y/6}%`,
-                                    transform: `translate(-50%, -50%) scale(${designScale}) rotate(${designRotation}deg)`
-                                }}>
-                                    <img
-                                        src={tshirtData.uploadedImage}
-                                        alt="Design preview"
-                                        style={{
-                                            maxWidth: '100%',
-                                            maxHeight: '100%',
-                                            objectFit: 'contain',
-                                            borderRadius: '0.5rem',
-                                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                                            border: '2px solid rgba(255, 255, 255, 0.5)'
-                                        }}
-                                    />
-                                </div>
+                                {tshirtData?.uploadedImage && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        transition: 'all 0.3s',
+                                        zIndex: 10,
+                                        width: '140px',
+                                        height: '140px',
+                                        left: `${50 + designPosition.x/6}%`,
+                                        top: `${40 + designPosition.y/6}%`,
+                                        transform: `translate(-50%, -50%) scale(${designScale}) rotate(${designRotation}deg)`
+                                    }}>
+                                        <img
+                                            src={tshirtData.uploadedImage}
+                                            alt="Design preview"
+                                            style={{
+                                                maxWidth: '100%',
+                                                maxHeight: '100%',
+                                                objectFit: 'contain',
+                                                borderRadius: '0.5rem',
+                                                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                                                border: '2px solid rgba(255, 255, 255, 0.5)'
+                                            }}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
 
