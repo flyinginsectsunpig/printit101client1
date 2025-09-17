@@ -63,7 +63,12 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
 
         try {
             const response = await api.post('/auth/register', formData);
-            onRegisterSuccess(response.data);
+            // Auto-login after successful registration
+            const loginResponse = await api.post('/auth/login', {
+                userName: formData.userName,
+                password: formData.password
+            });
+            onRegisterSuccess(loginResponse.data);
         } catch (error: any) {
             setError(error.response?.data?.message || 'Registration failed');
         } finally {

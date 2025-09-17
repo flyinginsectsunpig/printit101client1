@@ -91,15 +91,7 @@ const TShirtDesignerMain: React.FC = () => {
         }
     };
 
-    // Handle login success specifically for the Auth component
-    const handleLoginSuccess = (userData: any) => {
-        setUser(userData);
-        sessionStorage.setItem('currentUser', JSON.stringify(userData));
-    };
-
-    if (!user) {
-        return <Auth onAuthSuccess={handleLoginSuccess} />;
-    }
+    // Component assumes user is already authenticated via App.tsx routing
 
     const handleContinueToPositioning = (data: any) => {
         setTshirtData(data);
@@ -835,29 +827,23 @@ const TShirtDesignerMain: React.FC = () => {
             background: 'linear-gradient(135deg, #f0f9ff 0%, #ffffff 50%, #faf5ff 100%)',
             fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         }}>
-            {!user ? (
-                <Auth onAuthSuccess={handleLoginSuccess} />
-            ) : (
-                <>
-                    <Header
-                        page="designer"
-                        onButtonClick={() => navigate('/')}
-                        onProfileClick={() => navigate('/profile')}
+            <Header
+                page="designer"
+                onButtonClick={() => navigate('/')}
+                onProfileClick={() => navigate('/profile')}
+            />
+            <main>
+                {currentStep === 'upload' ? (
+                    <TShirtUpload onContinue={handleContinueToPositioning} />
+                ) : (
+                    <TShirtPositioning
+                        tshirtData={tshirtData}
+                        onSave={handleSaveDesign}
+                        onBack={handleBackToUpload}
+                        user={user}
                     />
-                    <main>
-                        {currentStep === 'upload' ? (
-                            <TShirtUpload onContinue={handleContinueToPositioning} />
-                        ) : (
-                            <TShirtPositioning
-                                tshirtData={tshirtData}
-                                onSave={handleSaveDesign}
-                                onBack={handleBackToUpload}
-                                user={user}
-                            />
-                        )}
-                    </main>
-                </>
-            )}
+                )}
+            </main>
         </div>
     );
 };
