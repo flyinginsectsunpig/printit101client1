@@ -7,6 +7,7 @@ export interface CartItem {
     quantity: number;
 }
 
+
 interface CartContextType {
     cart: CartItem[];
     items: CartItem[]; // alias for cart
@@ -14,6 +15,7 @@ interface CartContextType {
     addToCart: (item: CartItem) => void;
     removeFromCart: (id: number) => void;
     clearCart: () => void;
+
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -41,12 +43,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setCart([]);
     };
 
-    // calculate total in Rands
-    const total = cart.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0
-    );
-
+    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
     return (
         <CartContext.Provider
             value={{ cart, items: cart, total, addToCart, removeFromCart, clearCart }}

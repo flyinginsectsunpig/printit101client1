@@ -1,92 +1,71 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useCart } from "../context/CartContext";
-import { createPayment, getPaymentInfo } from "../service/paymentService";
-import { PaymentDTO } from "../types/Payment";
 
 export const Checkout = () => {
-  const { items, total, clearCart } = useCart();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [method, setMethod] = useState("BANK_TRANSFER");
-  const [bankInfo, setBankInfo] = useState<any>(null);
-  const [message, setMessage] = useState("");
+    const { cart, total, clearCart } = useCart();
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [method, setMethod] = useState("BANK_TRANSFER");
 
-  useEffect(() => {
-    getPaymentInfo().then(setBankInfo).catch(() => setBankInfo(null));
-  }, []);
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!items.length) {
-      setMessage("Cart is empty");
-      return;
-    }
+        const order = {
+            userName: name,
+            email,
+            paymentMethod: method,
+            totalAmount: total,
+            orderItems: cart.map((item) => ({
+                productId: item.id,
+                quantity: item.quantity,
+                pricePerUnit: item.price,
+            })),
+        };
 
-    const payload: PaymentDTO = {
-      amount: parseFloat(total.toFixed(2)),
-      paymentMethod: method,
-      paymentStatus: method === "CASH" ? "COMPLETED" : "PENDING"
+        try {
+            const res = await fetch("http://localhost:8080/api/orders/checkout", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(order),
+            });
+
+            if (res.ok) {
+                alert("Order placed successfully!");
+                clearCart();
+            }
+        } catch (err) {
+            console.error("Checkout failed", err);
+        }
     };
 
-    try {
-      const created = await createPayment(payload);
-      // you can send the payment confirmation to backend / email or save order
-      clearCart();
-      setMessage(`Payment created (id ${created.paymentId}). Follow instructions for ${method}.`);
-    } catch (err) {
-      console.error(err);
-      setMessage("Failed to create payment. See console.");
-    }
-  };
-
-  return (
-      <div style={{ padding: 20 }}>
-        <h2>Checkout</h2>
+    return (
         <form onSubmit={handleSubmit}>
-          <div>
-            <label>Name</label><br />
-            <input value={name} onChange={e => setName(e.target.value)} required />
-          </div>
-          <div>
-            <label>Email</label><br />
-            <input value={email} onChange={e => setEmail(e.target.value)} type="email" required />
-          </div>
-          <div>
-            <label>Payment method</label><br />
-            <select value={method} onChange={e => setMethod(e.target.value)}>
-              <option value="BANK_TRANSFER">Bank transfer / EFT</option>
-              <option value="CASH">Cash on collection</option>
-              <option value="CRYPTOCURRENCY">Cryptocurrency</option>
+            <h2>Checkout</h2>
+            <p>Total: R{total}</p>
+
+            <input
+                type="text"
+                placeholder="Full Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+            />
+
+            <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+            />
+
+            <select value={method} onChange={(e) => setMethod(e.target.value)}>
+                <option value="BANK_TRANSFER">Bank Transfer</option>
+                <option value="CREDIT_CARD">Credit Card</option>
+                <option value="PAYPAL">PayPal</option>
             </select>
-          </div>
 
-          <div style={{ marginTop: 12 }}>
-            <strong>Order total:</strong> R{total.toFixed(2)}
-          </div>
-
-          {method === "BANK_TRANSFER" && bankInfo && (
-              <div style={{ marginTop: 12, padding: 12, border: "1px solid #ddd" }}>
-                <h4>Bank transfer instructions</h4>
-                <div>Account name: {bankInfo.accountName}</div>
-                <div>Account number: {bankInfo.accountNumber}</div>
-                <div>Branch code: {bankInfo.branchCode}</div>
-                <p>Please use your order number or email as reference. After transfer, upload proof or contact support.</p>
-              </div>
-          )}
-
-          {method === "CRYPTOCURRENCY" && bankInfo && (
-              <div style={{ marginTop: 12 }}>
-                <h4>Crypto address</h4>
-                <div>{bankInfo.cryptoAddress}</div>
-              </div>
-          )}
-
-          <div style={{ marginTop: 16 }}>
-            <button type="submit">Place order / Create payment</button>
-          </div>
+            <button type="submit">Place Order</button>
         </form>
-
-        {message && <div style={{ marginTop: 12 }}>{message}</div>}
-      </div>
-  );
+    );
 };
