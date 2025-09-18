@@ -189,15 +189,23 @@ const TShirtDesignerMain: React.FC = () => {
                 id: tshirtResult.tshirtId,
                 name: tshirtResult.name,
                 price: tshirtResult.price,
-                quantity: tshirtResult.quantity,
+                quantity: data.tshirtData.quantity,
+                image: data.tshirtData.uploadedImage // 👈 Include this
             });
 
-            showNotification('T-shirt added to cart! Redirecting to checkout...');
 
-            // ✅ Redirect to checkout page
+            showNotification('T-shirt added to cart! Redirecting to checkout...');
+// ✅ Go back to designer AND keep cart visible
             setTimeout(() => {
-                navigate('/checkout');
+                setCurrentStep('upload');   // Reset designer
+                setTshirtData(null);        // Clear old data
+                // ✅ Optionally trigger cart open
+                const cartButton = document.getElementById("cart-toggle");
+                if (cartButton) {
+                    cartButton.click();     // 👈 simulate user opening cart
+                }
             }, 1500);
+
 
         } catch (error) {
             console.error('Error saving design:', error);

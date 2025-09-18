@@ -6,5 +6,5 @@ export interface CartItem {
   quantity: number;
   size?: string;
   color?: string;
-  image?: string;
+    image?: string;   // 👈 Add this optional field
 }
