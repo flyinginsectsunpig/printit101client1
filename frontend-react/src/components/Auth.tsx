@@ -1,23 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import Login from './Login';
 import Register from './Register';
-import AdminDashboard from './AdminDashboard';
 import { useAuth } from '../context/AuthContext';
-import '../styles.css';
 
 interface AuthProps {
     onAuthSuccess: (user: any) => void;
 }
 
 const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
-    const [isLogin, setIsLogin] = useState(true);
-    const [user, setUser] = useState<any>(null);
-    const { logout } = useAuth();
+    const [isLoginMode, setIsLoginMode] = useState(true);
+    const { login, setCurrentUser } = useAuth();
 
-    const handleAuthSuccess = (userData: any) => {
-        console.log('Auth: Login successful, user data:', userData);
-        setUser(userData);
-        onAuthSuccess(userData);
+    const handleSwitchToRegister = () => {
+        setIsLoginMode(false);
+    };
+
+    const handleSwitchToLogin = () => {
+        setIsLoginMode(true);
+    };
+
+    const handleAuthSuccess = (user: any) => {
+        // setCurrentUser already handles both user and login state
+        setCurrentUser(user);
+        onAuthSuccess(user);
     };
 
     const handleLogout = () => {
@@ -102,19 +107,19 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
 
     // Show login/register forms
     return (
-        <div className="auth-wrapper">
-            {isLogin ? (
+        <>
+            {isLoginMode ? (
                 <Login
                     onLoginSuccess={handleAuthSuccess}
-                    onSwitchToRegister={() => setIsLogin(false)}
+                    onSwitchToRegister={handleSwitchToRegister}
                 />
             ) : (
                 <Register
                     onRegisterSuccess={handleAuthSuccess}
-                    onSwitchToLogin={() => setIsLogin(true)}
+                    onSwitchToLogin={handleSwitchToLogin}
                 />
             )}
-        </div>
+        </>
     );
 };
 

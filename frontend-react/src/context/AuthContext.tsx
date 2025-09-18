@@ -1,68 +1,88 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '../domain/User';
+
+import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { Customer } from "../domain/Customer";
 
 interface AuthContextType {
     isLoggedIn: boolean;
-    user: User | null;
-    login: (userData: User) => void;
+    user: Customer | null;
+    login: () => void;
     logout: () => void;
-    updateUser: (userData: User) => void;
+    setUser: (user: Customer | null) => void;
+    setCurrentUser: (user: Customer | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-    children: ReactNode;
-}
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+    // Initialize state synchronously from localStorage
+    const getInitialAuthState = () => {
+        const storedUser = localStorage.getItem('user');
+        const storedIsLoggedIn = localStorage.getItem('isLoggedIn');
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-    const [user, setUser] = useState<User | null>(null);
-
-    // Check for existing session on mount
-    useEffect(() => {
-        const savedUser = sessionStorage.getItem('currentUser');
-        if (savedUser) {
+        if (storedUser && storedIsLoggedIn === 'true') {
             try {
-                const userData = JSON.parse(savedUser);
-                setUser(userData);
-                setIsLoggedIn(true);
-                console.log('AuthContext: Restored user session:', userData);
+                const parsedUser = JSON.parse(storedUser);
+                return { isLoggedIn: true, user: parsedUser };
             } catch (error) {
-                console.error('AuthContext: Failed to parse saved user data:', error);
-                sessionStorage.removeItem('currentUser');
+                // Clear invalid data
+                localStorage.removeItem('user');
+                localStorage.removeItem('isLoggedIn');
+                return { isLoggedIn: false, user: null };
             }
         }
-    }, []);
+        return { isLoggedIn: false, user: null };
+    };
 
-    const login = (userData: User) => {
-        setUser(userData);
+    const initialState = getInitialAuthState();
+    const [isLoggedIn, setIsLoggedIn] = useState(initialState.isLoggedIn);
+    const [user, setUser] = useState<Customer | null>(initialState.user);
+
+    // Effect to update isLoggedIn when user state changes, and persist to localStorage
+    useEffect(() => {
+        if (user) {
+            setIsLoggedIn(true);
+            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('isLoggedIn', 'true');
+        } else {
+            setIsLoggedIn(false);
+            localStorage.removeItem('user');
+            localStorage.removeItem('isLoggedIn');
+        }
+    }, [user]);
+
+    const login = () => {
         setIsLoggedIn(true);
-        sessionStorage.setItem('currentUser', JSON.stringify(userData));
-        console.log('AuthContext: User logged in:', userData);
+        localStorage.setItem('isLoggedIn', 'true');
     };
 
     const logout = () => {
-        setUser(null);
         setIsLoggedIn(false);
-        sessionStorage.removeItem('currentUser');
-        console.log('AuthContext: User logged out');
+        setUser(null);
+        localStorage.removeItem('user');
+        localStorage.removeItem('isLoggedIn');
     };
 
-    const updateUser = (userData: User) => {
-        setUser(userData);
-        sessionStorage.setItem('currentUser', JSON.stringify(userData));
-        console.log('AuthContext: User data updated:', userData);
+    const setUserWithPersistence = (user: Customer | null) => {
+        setUser(user);
     };
+
+    const setCurrentUser = (user: Customer | null) => {
+        setUser(user);
+        if (user) {
+            setIsLoggedIn(true);
+            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('isLoggedIn', 'true');
+        } else {
+            setIsLoggedIn(false);
+            setUser(null);
+            localStorage.removeItem('user');
+            localStorage.removeItem('isLoggedIn');
+        }
+    };
+
 
     return (
-        <AuthContext.Provider value={{
-            isLoggedIn,
-            user,
-            login,
-            logout,
-            updateUser
-        }}>
+        <AuthContext.Provider value={{ isLoggedIn, user, login, logout, setUser: setUserWithPersistence, setCurrentUser: setCurrentUser }}>
             {children}
         </AuthContext.Provider>
     );

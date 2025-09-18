@@ -1,92 +1,98 @@
-import React, { useEffect, useState } from "react";
-import { useCart } from "../context/CartContext";
-import { createPayment, getPaymentInfo } from "../service/paymentService";
-import { PaymentDTO } from "../types/Payment";
+import React, { useState } from 'react';
+import { useCart } from '../context/CartContext';
 
-export const Checkout = () => {
-  const { items, total, clearCart } = useCart();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [method, setMethod] = useState("BANK_TRANSFER");
-  const [bankInfo, setBankInfo] = useState<any>(null);
-  const [message, setMessage] = useState("");
+export const Checkout: React.FC = () => {
+    const { cart, clearCart } = useCart();
+    const [deliveryAddress, setDeliveryAddress] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState('BANK_TRANSFER');
 
-  useEffect(() => {
-    getPaymentInfo().then(setBankInfo).catch(() => setBankInfo(null));
-  }, []);
+    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!items.length) {
-      setMessage("Cart is empty");
-      return;
-    }
-
-    const payload: PaymentDTO = {
-      amount: parseFloat(total.toFixed(2)),
-      paymentMethod: method,
-      paymentStatus: method === "CASH" ? "COMPLETED" : "PENDING"
+    const handlePlaceOrder = () => {
+        alert(`Order placed with ${paymentMethod}. Total: R${total.toFixed(2)}. Delivery: ${deliveryAddress}`);
+        clearCart();
     };
 
-    try {
-      const created = await createPayment(payload);
-      // you can send the payment confirmation to backend / email or save order
-      clearCart();
-      setMessage(`Payment created (id ${created.paymentId}). Follow instructions for ${method}.`);
-    } catch (err) {
-      console.error(err);
-      setMessage("Failed to create payment. See console.");
-    }
-  };
+    return (
+        <div style={{ maxWidth: '800px', margin: '2rem auto', padding: '1rem' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>Checkout</h2>
 
-  return (
-      <div style={{ padding: 20 }}>
-        <h2>Checkout</h2>
-        <form onSubmit={handleSubmit}>
-          <div>
-            <label>Name</label><br />
-            <input value={name} onChange={e => setName(e.target.value)} required />
-          </div>
-          <div>
-            <label>Email</label><br />
-            <input value={email} onChange={e => setEmail(e.target.value)} type="email" required />
-          </div>
-          <div>
-            <label>Payment method</label><br />
-            <select value={method} onChange={e => setMethod(e.target.value)}>
-              <option value="BANK_TRANSFER">Bank transfer / EFT</option>
-              <option value="CASH">Cash on collection</option>
-              <option value="CRYPTOCURRENCY">Cryptocurrency</option>
-            </select>
-          </div>
+            {/* Orders */}
+            <div style={{ marginBottom: '2rem' }}>
+                {cart.map(item => (
+                    <div key={item.id} style={{
+                        display: 'flex',
+                        gap: '1rem',
+                        marginBottom: '1rem',
+                        background: '#f9fafb',
+                        padding: '1rem',
+                        borderRadius: '0.75rem'
+                    }}>
+                        <img src={item.image} alt={item.name} style={{ width: '80px', height: '80px', borderRadius: '0.5rem', objectFit: 'cover' }} />
+                        <div>
+                            <p style={{ fontWeight: '600' }}>{item.name}</p>
+                            <p>{item.color} | {item.size}</p>
+                            <p>Qty: {item.quantity}</p>
+                            <p>R {(item.price * item.quantity).toFixed(2)}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
 
-          <div style={{ marginTop: 12 }}>
-            <strong>Order total:</strong> R{total.toFixed(2)}
-          </div>
+            {/* Delivery */}
+            <div style={{ marginBottom: '2rem' }}>
+                <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem' }}>Delivery Address</label>
+                <textarea
+                    value={deliveryAddress}
+                    onChange={(e) => setDeliveryAddress(e.target.value)}
+                    rows={3}
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #d1d5db' }}
+                />
+            </div>
 
-          {method === "BANK_TRANSFER" && bankInfo && (
-              <div style={{ marginTop: 12, padding: 12, border: "1px solid #ddd" }}>
-                <h4>Bank transfer instructions</h4>
-                <div>Account name: {bankInfo.accountName}</div>
-                <div>Account number: {bankInfo.accountNumber}</div>
-                <div>Branch code: {bankInfo.branchCode}</div>
-                <p>Please use your order number or email as reference. After transfer, upload proof or contact support.</p>
-              </div>
-          )}
+            {/* Payment */}
+            <div style={{ marginBottom: '2rem' }}>
+                <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem' }}>Payment Method</label>
+                <select
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #d1d5db' }}
+                >
+                    <option value="BANK_TRANSFER">Bank Transfer (Absa)</option>
+                    <option value="CASH_SEND">CashSend (0781266606)</option>
+                    <option value="PAY_ON_DELIVERY">Pay on Delivery</option>
+                </select>
 
-          {method === "CRYPTOCURRENCY" && bankInfo && (
-              <div style={{ marginTop: 12 }}>
-                <h4>Crypto address</h4>
-                <div>{bankInfo.cryptoAddress}</div>
-              </div>
-          )}
+                {paymentMethod === 'BANK_TRANSFER' && (
+                    <div style={{ marginTop: '1rem', padding: '1rem', background: '#f3f4f6', borderRadius: '0.75rem' }}>
+                        <p><strong>Bank:</strong> Absa</p>
+                        <p><strong>Account Name:</strong> Gcina Mbabe</p>
+                        <p><strong>Account No:</strong> 4107186684</p>
+                        <p><strong>Branch Code:</strong> 632005</p>
+                        <p><strong>Type:</strong> Current</p>
+                    </div>
+                )}
+                {paymentMethod === 'CASH_SEND' && (
+                    <p style={{ marginTop: '1rem' }}>Send CashSend to: <strong>0781266606</strong></p>
+                )}
+            </div>
 
-          <div style={{ marginTop: 16 }}>
-            <button type="submit">Place order / Create payment</button>
-          </div>
-        </form>
-
-        {message && <div style={{ marginTop: 12 }}>{message}</div>}
-      </div>
-  );
+            <div style={{ fontWeight: 'bold', marginBottom: '1rem' }}>Total: R {total.toFixed(2)}</div>
+            <button
+                onClick={handlePlaceOrder}
+                style={{
+                    width: '100%',
+                    padding: '1rem',
+                    background: 'linear-gradient(to right, #2563eb, #9333ea)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.75rem',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                }}
+            >
+                Place Order
+            </button>
+        </div>
+    );
 };

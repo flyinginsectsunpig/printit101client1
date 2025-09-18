@@ -75,38 +75,13 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
         setLoading(true);
 
         try {
-            const registerData = {
-                firstName: formData.firstName.trim(),
-                lastName: formData.lastName.trim(),
-                userName: formData.userName.trim(),
-                password: formData.password,
-                contact: {
-                    email: formData.email.trim(),
-                    phone: formData.phone.trim()
-                },
-                address: {
-                    propertyNumber: parseInt(formData.propertyNumber) || 0,
-                    buildingName: formData.buildingName.trim(),
-                    unitNumber: parseInt(formData.unitNumber) || 0,
-                    poBoxNumber: parseInt(formData.poBoxNumber) || 0,
-                    street: formData.street.trim(),
-                    municipality: formData.municipality.trim(),
-                    province: formData.province.trim(),
-                    postalCode: formData.postalCode.trim(),
-                    country: formData.country.trim()
-                }
-            };
-
-            console.log('Sending registration data:', registerData);
-
-            const response = await api.post('/auth/register', registerData);
-            console.log('Registration successful:', response.data);
-
-            // Update auth context
-            login(response.data);
-
-            // Call the callback
-            onRegisterSuccess(response.data);
+            const response = await api.post('/auth/register', formData);
+            // Auto-login after successful registration
+            const loginResponse = await api.post('/auth/login', {
+                userName: formData.userName,
+                password: formData.password
+            });
+            onRegisterSuccess(loginResponse.data);
         } catch (error: any) {
             console.error('Registration error:', error);
             setError(error.response?.data?.message || 'Registration failed. Please try again.');
