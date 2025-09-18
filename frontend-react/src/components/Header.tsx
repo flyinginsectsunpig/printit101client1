@@ -1,3 +1,4 @@
+// src/components/Header.tsx
 import React from 'react';
 import {Shirt, LogOut} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -25,11 +26,12 @@ const Header: React.FC<HeaderProps> = ({page, onButtonClick, onProfileClick}) =>
             borderBottom: '1px solid #f3f4f6',
             position: 'sticky',
             top: 0,
-            zIndex: 40,
-            width: '100%', // Ensure full width
-            padding: '0 1rem' // Add padding instead of fixed maxWidth
+            zIndex: 40
         }}>
             <div style={{
+                maxWidth: '1280px',
+                margin: '0 auto',
+                padding: '0 1rem',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -45,7 +47,7 @@ const Header: React.FC<HeaderProps> = ({page, onButtonClick, onProfileClick}) =>
                         padding: '0.5rem',
                         borderRadius: '0.75rem'
                     }}>
-                        <Shirt style={{height: '2rem', width: '2rem', color: 'white'}}/>
+                        <Shirt style={{ height: '2rem', width: '2rem', color: 'white' }} />
                     </div>
                     <span style={{
                         fontSize: '1.875rem',
@@ -55,7 +57,7 @@ const Header: React.FC<HeaderProps> = ({page, onButtonClick, onProfileClick}) =>
                         WebkitTextFillColor: 'transparent',
                         backgroundClip: 'text'
                     }}>
-                        TeeDesign Pro
+                        T-Shirt Designer
                     </span>
                 </div>
 
