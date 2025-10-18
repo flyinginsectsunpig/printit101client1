@@ -33,9 +33,8 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister }) => 
         setError('');
 
         try {
-            console.log('Attempting login with:', formData);
+            // Login attempt - credentials not logged for security
             const response = await api.post('/auth/login', formData);
-            console.log('Login response:', response.data);
             onLoginSuccess(response.data);
         } catch (error: any) {
             console.error('Login error:', error);

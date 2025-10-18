@@ -14,6 +14,7 @@ import { Cart } from "./components/Cart";
 import { Checkout } from "./components/Checkout";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import AdminDashboard from "./components/AdminDashboard";
 
 function App() {
     return (
@@ -67,6 +68,7 @@ function Layout() {
                         <Route path="/customer-demo" element={<CustomerDemo />} />
                         <Route path="/tshirt-designer" element={<TShirtDesignerMain />} />
                         <Route path="/profile" element={<Profile />} />
+                        <Route path="/admin-dashboard" element={<AdminDashboard />} />
                         <Route path="/placement-test-api" element={<PlacementDataTestApi />} />
                         <Route path="/scale-test-api" element={<ScaleTestApi />} />
                         <Route path="/position-test-api" element={<PositionTestApi />} />

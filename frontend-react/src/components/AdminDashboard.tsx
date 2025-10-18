@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
 import * as customerService from "../service/customerService";
 import { Customer } from "../domain/Customer";
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 interface AdminDashboardProps {
     onLogout?: () => void;
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = () => {
+    const navigate = useNavigate();
+    const { logout } = useAuth();
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [showForm, setShowForm] = useState(false);
@@ -236,33 +240,35 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                                 </p>
                             </div>
                         </div>
-                        {onLogout && (
-                            <button
-                                onClick={onLogout}
-                                style={{
-                                    background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
-                                    color: "#fff",
-                                    padding: "0.75rem 1.5rem",
-                                    border: "none",
-                                    borderRadius: "10px",
-                                    cursor: "pointer",
-                                    fontWeight: "500",
-                                    fontSize: "14px",
-                                    boxShadow: "0 4px 15px rgba(239, 68, 68, 0.3)",
-                                    transition: "all 0.2s ease"
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = "translateY(-2px)";
-                                    e.currentTarget.style.boxShadow = "0 6px 20px rgba(239, 68, 68, 0.4)";
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = "translateY(0)";
-                                    e.currentTarget.style.boxShadow = "0 4px 15px rgba(239, 68, 68, 0.3)";
-                                }}
-                            >
-                                Sign Out
-                            </button>
-                        )}
+
+                        <button
+                            onClick={() => {
+                                logout();
+                                navigate('/');
+                            }}
+                            style={{
+                                background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+                                color: "#fff",
+                                padding: "0.75rem 1.5rem",
+                                border: "none",
+                                borderRadius: "10px",
+                                cursor: "pointer",
+                                fontWeight: "500",
+                                fontSize: "14px",
+                                boxShadow: "0 4px 15px rgba(239, 68, 68, 0.3)",
+                                transition: "all 0.2s ease"
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = "translateY(-2px)";
+                                e.currentTarget.style.boxShadow = "0 6px 20px rgba(239, 68, 68, 0.4)";
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "translateY(0)";
+                                e.currentTarget.style.boxShadow = "0 4px 15px rgba(239, 68, 68, 0.3)";
+                            }}
+                        >
+                            Sign Out
+                        </button>
                     </div>
                 </div>
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import api from '../service/api';
+import Header from './Header';
 
 export const Checkout: React.FC = () => {
     const { cart, clearCart } = useCart();
@@ -76,6 +77,8 @@ export const Checkout: React.FC = () => {
     };
 
     return (
+        <>
+        <Header page="designer" onButtonClick={() => {}} />
         <div style={{ maxWidth: '800px', margin: '2rem auto', padding: '1rem' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>Checkout</h2>
 
@@ -170,5 +173,6 @@ export const Checkout: React.FC = () => {
                 {loading ? 'Placing Order...' : 'Place Order'}
             </button>
         </div>
-    );
+</>
+);
 };

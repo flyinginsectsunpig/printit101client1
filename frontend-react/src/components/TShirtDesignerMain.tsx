@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import TShirtUpload from "./TShirtUpload";
 import TShirtPositioning from "./TShirtPositioning";
+import Header from './Header'; // Import Header component
 
 const TShirtDesignerMain: React.FC = () => {
     const [currentStep, setCurrentStep] = useState<'upload' | 'positioning'>('upload');
@@ -246,6 +247,7 @@ const TShirtDesignerMain: React.FC = () => {
     return (
         <div>
             {/* header, notification, etc (unchanged) */}
+            <Header page="designer" onButtonClick={() => {}} /> {/* Added Header component */}
 
             <main>
                 {currentStep === 'upload' ? (

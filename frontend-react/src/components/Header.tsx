@@ -71,9 +71,29 @@ const Header: React.FC<HeaderProps> = ({page, onButtonClick, onProfileClick}) =>
                             Welcome, {user.firstName} {user.lastName}
                         </span>
                     )}
-                    {page === 'designer' && onProfileClick && (
+                    {isLoggedIn && user?.role === 'ADMIN' && (
                         <button
-                            onClick={onProfileClick}
+                            onClick={() => window.location.href = '/admin-dashboard'}
+                            style={{
+                                background: 'linear-gradient(to right, #f59e0b, #d97706)',
+                                color: 'white',
+                                padding: '0.5rem 1.5rem',
+                                borderRadius: '0.75rem',
+                                fontSize: '0.875rem',
+                                fontWeight: '500',
+                                transition: 'all 0.2s',
+                                border: 'none',
+                                cursor: 'pointer',
+                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                                marginRight: '0.5rem'
+                            }}
+                        >
+                            Admin Dashboard
+                        </button>
+                    )}
+                    {isLoggedIn && (
+                        <button
+                            onClick={onProfileClick || (() => window.location.href = '/profile')}
                             style={{
                                 background: 'linear-gradient(to right, #9333ea, #7c3aed)',
                                 color: 'white',

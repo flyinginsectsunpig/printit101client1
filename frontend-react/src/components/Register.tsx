@@ -97,7 +97,6 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
             };
 
             const response = await api.post('/auth/register', registrationData);
-            console.log('Registration successful:', response.data);
 
             // Auto-login after successful registration
             const loginResponse = await api.post('/auth/login', {
@@ -105,8 +104,7 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
                 password: formData.password
             });
 
-            console.log('Auto-login response:', loginResponse.data);
-            // Ensure token is included in the user object if returned by backend
+            // Token is included in the response from backend
             onRegisterSuccess(loginResponse.data);
         } catch (error: any) {
             console.error('Registration error:', error);
