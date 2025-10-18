@@ -1,8 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import api from '../service/api';
 import Header from './Header';
-import { useAuth } from '../context/AuthContext';
 
 interface LoginProps {
     onLoginSuccess: (user: any) => void;
@@ -10,7 +8,6 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister }) => {
-    const { login, setUser } = useAuth();
     const [formData, setFormData] = useState({
         userName: '',
         password: ''
@@ -36,12 +33,18 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister }) => 
         setError('');
 
         try {
-            console.log('Attempting login with:', formData);
+            // Login attempt - credentials not logged for security
             const response = await api.post('/auth/login', formData);
             onLoginSuccess(response.data);
         } catch (error: any) {
             console.error('Login error:', error);
-            setError(error.response?.data?.message || 'Login failed');
+            if (error.response?.status === 401) {
+                setError('Invalid username or password. Please try again.');
+            } else if (error.response?.status === 404) {
+                setError('User not found. Please check your username or register a new account.');
+            } else {
+                setError(error.response?.data?.message || 'Login failed. Please try again.');
+            }
         } finally {
             setLoading(false);
         }

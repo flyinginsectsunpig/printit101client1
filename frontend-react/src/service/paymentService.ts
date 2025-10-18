@@ -1,15 +1,22 @@
-import api from "./api";
-import { PaymentDTO } from "../types/Payment";
+import api from './api';
 
-const PAYMENT_URL = "/api/payments";
-const PAYMENT_INFO = "/api/payment-info";
+export interface Payment {
+  paymentId?: number;
+  paymentMethod: string;
+  amount: number;
+}
 
-export const createPayment = async (payload: PaymentDTO) => {
-  const resp = await api.post(PAYMENT_URL, payload);
-  return resp.data;
+export const createPayment = async (paymentData: Payment): Promise<Payment> => {
+  const response = await api.post('/payment/create', paymentData);
+  return response.data;
 };
 
-export const getPaymentInfo = async () => {
-  const resp = await api.get(PAYMENT_INFO);
-  return resp.data;
+export const getPaymentById = async (paymentId: number): Promise<Payment> => {
+  const response = await api.get(`/payment/read/${paymentId}`);
+  return response.data;
+};
+
+export const getAllPayments = async (): Promise<Payment[]> => {
+  const response = await api.get('/payment/getall');
+  return response.data;
 };

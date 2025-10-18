@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import api from '../service/api';
 import Header from './Header';
-import { useAuth } from '../context/AuthContext';
 
 interface RegisterProps {
     onRegisterSuccess: (user: any) => void;
@@ -10,7 +9,6 @@ interface RegisterProps {
 }
 
 const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin }) => {
-    const { login } = useAuth();
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -75,16 +73,48 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
         setLoading(true);
 
         try {
-            const response = await api.post('/auth/register', formData);
+            // Transform formData to match backend's expected structure
+            const registrationData = {
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                userName: formData.userName,
+                password: formData.password,
+                contact: {
+                    email: formData.email,
+                    phone: formData.phone
+                },
+                address: {
+                    propertyNumber: formData.propertyNumber,
+                    buildingName: formData.buildingName,
+                    unitNumber: formData.unitNumber,
+                    poBoxNumber: formData.poBoxNumber,
+                    street: formData.street,
+                    municipality: formData.municipality,
+                    province: formData.province,
+                    postalCode: formData.postalCode,
+                    country: formData.country
+                }
+            };
+
+            const response = await api.post('/auth/register', registrationData);
+
             // Auto-login after successful registration
             const loginResponse = await api.post('/auth/login', {
                 userName: formData.userName,
                 password: formData.password
             });
+
+            // Token is included in the response from backend
             onRegisterSuccess(loginResponse.data);
         } catch (error: any) {
             console.error('Registration error:', error);
-            setError(error.response?.data?.message || 'Registration failed. Please try again.');
+            if (error.response?.status === 409) {
+                setError('Username or email already exists. Please try logging in or use a different username.');
+            } else if (error.response?.status === 401) {
+                setError('Invalid credentials. Please check your username and password.');
+            } else {
+                setError(error.response?.data?.message || 'Registration failed. Please try again.');
+            }
         } finally {
             setLoading(false);
         }
@@ -301,4 +331,3 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
 };
 
 export default Register;
-

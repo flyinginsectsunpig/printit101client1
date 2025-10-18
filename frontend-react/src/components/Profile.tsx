@@ -23,6 +23,7 @@ const Profile: React.FC = () => {
             phoneNumber: ''
         },
         address: {
+            addressId: 0,
             buildingName: '',
             unitNumber: 0,
             propertyNumber: 0,
@@ -31,7 +32,7 @@ const Profile: React.FC = () => {
             municipality: '',
             province: '',
             postalCode: '',
-            country: ''
+            country: 'South Africa'
         }
     });
     const [notification, setNotification] = useState('');
@@ -54,6 +55,7 @@ const Profile: React.FC = () => {
                     phoneNumber: user.contact?.phoneNumber || ''
                 },
                 address: {
+                    addressId: user.address?.addressId || 0,
                     buildingName: user.address?.buildingName || '',
                     unitNumber: user.address?.unitNumber || 0,
                     poBoxNumber: user.address?.poBoxNumber || 0,
@@ -62,7 +64,7 @@ const Profile: React.FC = () => {
                     municipality: user.address?.municipality || '',
                     province: user.address?.province || '',
                     postalCode: user.address?.postalCode || '',
-                    country: user.address?.country || ''
+                    country: user.address?.country || 'South Africa'
                 }
             });
         }
