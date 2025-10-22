@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { Customer } from "../domain/Customer";
 
@@ -22,13 +21,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (storedUser && storedIsLoggedIn === 'true') {
             try {
                 const parsedUser = JSON.parse(storedUser);
-                return { isLoggedIn: true, user: parsedUser };
+                // Validate token exists
+                if (parsedUser && parsedUser.token) {
+                    return { isLoggedIn: true, user: parsedUser };
+                }
             } catch (error) {
-                // Clear invalid data
-                localStorage.removeItem('user');
-                localStorage.removeItem('isLoggedIn');
-                return { isLoggedIn: false, user: null };
+                console.error('Error parsing stored user:', error);
             }
+            // Clear invalid data
+            localStorage.removeItem('user');
+            localStorage.removeItem('isLoggedIn');
         }
         return { isLoggedIn: false, user: null };
     };

@@ -288,7 +288,7 @@ const TShirtPositioning: React.FC<TShirtPositioningProps> = ({ tshirtData, onSav
                                 color: backendConnected ? '#166534' : '#991b1b',
                                 fontWeight: '500'
                             }}>
-                                {backendConnected ? 'Backend Connected' : 'Backend Disconnected'}
+                                {backendConnected ? '' : ''}
                             </span>
                         </div>
                         <div style={{

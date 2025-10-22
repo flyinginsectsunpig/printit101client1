@@ -1,6 +1,6 @@
 // src/components/Header.tsx
 import React from 'react';
-import {Shirt, LogOut} from 'lucide-react';
+import { Shirt, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface HeaderProps {

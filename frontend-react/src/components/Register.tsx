@@ -16,7 +16,7 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
         password: '',
         confirmPassword: '',
         email: '',
-        phone: '',
+        phone: '+27 ',
         propertyNumber: '',
         buildingName: '',
         unitNumber: '',
@@ -33,9 +33,56 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
+        let formattedValue = value;
+
+        // Format phone number (South African format: +27 XX XXX XXXX)
+        if (name === 'phone') {
+            // Always ensure +27 prefix
+            if (!value.startsWith('+27 ')) {
+                return; // Don't allow changes that remove the prefix
+            }
+
+            // Remove all non-digits from the part after +27
+            const afterPrefix = value.substring(4);
+            let cleaned = afterPrefix.replace(/\D/g, '');
+
+            // If user pasted number starting with 0, remove it
+            if (cleaned.startsWith('0')) {
+                cleaned = cleaned.slice(1);
+            }
+
+            // South African numbers should be 9 digits after +27 (XX XXX XXXX)
+            if (cleaned.length <= 9) {
+                if (cleaned.length > 5) {
+                    // Format: +27 XX XXX XXXX
+                    formattedValue = `+27 ${cleaned.slice(0, 2)} ${cleaned.slice(2, 5)} ${cleaned.slice(5, 9)}`.trim();
+                } else if (cleaned.length > 2) {
+                    // Format: +27 XX XXX
+                    formattedValue = `+27 ${cleaned.slice(0, 2)} ${cleaned.slice(2, 5)}`.trim();
+                } else if (cleaned.length > 0) {
+                    // Format: +27 XX
+                    formattedValue = `+27 ${cleaned}`;
+                } else {
+                    formattedValue = '+27 ';
+                }
+            } else {
+                return; // Don't allow more than 9 digits
+            }
+        }
+
+        // Format postal code (4 digits only)
+        if (name === 'postalCode') {
+            const cleaned = value.replace(/\D/g, '');
+            if (cleaned.length <= 4) {
+                formattedValue = cleaned;
+            } else {
+                return; // Don't allow more than 4 digits
+            }
+        }
+
         setFormData(prev => ({
             ...prev,
-            [name]: value
+            [name]: formattedValue
         }));
     };
 
@@ -108,13 +155,7 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
             onRegisterSuccess(loginResponse.data);
         } catch (error: any) {
             console.error('Registration error:', error);
-            if (error.response?.status === 409) {
-                setError('Username or email already exists. Please try logging in or use a different username.');
-            } else if (error.response?.status === 401) {
-                setError('Invalid credentials. Please check your username and password.');
-            } else {
-                setError(error.response?.data?.message || 'Registration failed. Please try again.');
-            }
+            setError(error.response?.data?.message || 'Registration failed. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -243,6 +284,9 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
                                         name="phone"
                                         value={formData.phone}
                                         onChange={handleChange}
+                                        placeholder="+27 XX XXX XXXX"
+                                        pattern="\+27\s[0-9]{2}\s[0-9]{3}\s[0-9]{4}"
+                                        title="Phone number format: +27 XX XXX XXXX"
                                         required
                                     />
                                 </div>
@@ -265,7 +309,7 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
                             </div>
                             <div className="form-row">
                                 <div className="form-group">
-                                    <label htmlFor="municipality">Municipality *:</label>
+                                    <label htmlFor="municipality">City *:</label>
                                     <input
                                         type="text"
                                         id="municipality"
@@ -296,6 +340,10 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
                                         name="postalCode"
                                         value={formData.postalCode}
                                         onChange={handleChange}
+                                        placeholder="8000"
+                                        pattern="[0-9]{4}"
+                                        title="Postal code must be exactly 4 digits"
+                                        maxLength={4}
                                         required
                                     />
                                 </div>
